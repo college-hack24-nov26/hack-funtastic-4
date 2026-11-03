@@ -1,0 +1,42 @@
+@import url("tokens.css");
+
+.student-hero .hero-panel {
+  align-self: stretch;
+}
+
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .75rem;
+  margin-top: 1.5rem;
+}
+
+.stat {
+  padding: .8rem;
+  border-radius: 12px;
+  background: rgb(29 13 7 / 45%);
+}
+
+.stat strong {
+  display: block;
+  color: var(--color-light-gold);
+  font-size: 1.45rem;
+}
+
+.stat span {
+  color: var(--color-muted);
+  font-size: .78rem;
+}
+
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin-top: 1.25rem;
+}
+
+@media (max-width: 480px) {
+  .dashboard-stats {
+    grid-template-columns: 1fr;
+  }
+}

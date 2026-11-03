@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="MythoVerse student learning dashboard">
+  <title>MythoVerse | Student Dashboard</title>
+  <link rel="stylesheet" href="../assets/css/student.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to student dashboard</a>
+  <div class="page-shell">
+    <header class="module-header">
+      <a class="brand-lockup" href="./" aria-label="MythoVerse student dashboard">
+        <strong>MythoVerse</strong>
+        <span>Student modules</span>
+      </a>
+      <nav class="module-nav" aria-label="Student module navigation">
+        <a href="#learning">Learning</a>
+        <a href="#explore">Explore</a>
+        <a href="#practice">Practice</a>
+        <a href="#profile" id="nav-profile">Profile</a>
+        <a href="../admin/">Admin entry</a>
+      </nav>
+    </header>
+
+    <main id="main-content">
+      <section class="hero student-hero" aria-labelledby="student-title">
+        <div>
+          <p class="eyebrow">The path begins within</p>
+          <h1 id="student-title">Welcome to your learning Ashram.</h1>
+          <p class="lead">Continue a guided journey through wisdom, stories, challenges and the fourteen Lokas.</p>
+          <div class="quick-actions">
+            <a class="button" href="#learning">Continue learning</a>
+            <button class="button button--quiet" type="button" data-modal-open="journey-modal">View journey note</button>
+          </div>
+        </div>
+        <aside class="hero-panel" aria-label="Learner profile summary">
+          <div id="profile-loading" style="display:none;">
+            <p class="eyebrow">Loading profile…</p>
+          </div>
+          <div id="profile-unauthenticated" style="display:none;">
+            <p class="eyebrow">Not signed in</p>
+            <strong>Guest</strong>
+            <p>Sign in to view your progress, rewards and journey.</p>
+            <button class="button" type="button" data-action="sign-in">Sign in</button>
+          </div>
+          <div id="profile-authenticated" style="display:none;">
+            <p class="eyebrow">Learner profile</p>
+            <strong id="profile-name">Learner</strong>
+            <p id="profile-role">Student</p>
+          </div>
+          <div id="profile-error" style="display:none;color:var(--color-gold);">
+            <p class="eyebrow">Unable to load profile</p>
+            <p id="profile-error-message">Please try again later.</p>
+          </div>
+          <div id="dashboard-stats" class="dashboard-stats" style="display:none;margin-top:1.5rem;">
+            <div class="stat"><strong id="stat-coins">0</strong><span>Coins</span></div>
+            <div class="stat"><strong id="stat-ashram">0</strong><span>Ashram stages</span></div>
+            <div class="stat"><strong id="stat-quests">0</strong><span>Quests</span></div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="section" id="learning" aria-labelledby="learning-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Your next steps</p>
+            <h2 id="learning-title">Learning journey</h2>
+          </div>
+          <p id="learning-empty">Choose a module to begin.</p>
+        </div>
+        <div class="card-grid">
+          <a class="card card-link" href="#ashram" data-require-auth>
+            <span class="card-icon" aria-hidden="true">✦</span>
+            <h3>Interactive Ashram</h3>
+            <p>Move through five transformation stages, from curiosity to self-mastery.</p>
+            <span class="status">Foundation preview</span>
+          </a>
+          <a class="card card-link" href="#library" data-require-auth>
+            <span class="card-icon" aria-hidden="true">◈</span>
+            <h3>Learning Library</h3>
+            <p>Gather chapters, reference material and study resources in one quiet space.</p>
+            <span class="status">Library entry</span>
+          </a>
+          <a class="card card-link" href="#tests" data-require-auth>
+            <span class="card-icon" aria-hidden="true">✓</span>
+            <h3>Study &amp; Tests</h3>
+            <p>Prepare with Study Mode and enter tests when the knowledge feels ready.</p>
+            <span class="status">Practice preview</span>
+          </a>
+        </div>
+        <div id="learning-auth-note" style="display:none;margin-top:1rem;color:var(--color-beige);font-size:.9rem;">
+          Sign in to track your progress through these modules.
+        </div>
+      </section>
+
+      <section class="section" id="explore" aria-labelledby="explore-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Worlds of wisdom</p>
+            <h2 id="explore-title">Explore the mythic realm</h2>
+          </div>
+        </div>
+        <div class="card-grid">
+          <a class="card card-link" id="ashram" href="#ashram" data-require-auth>
+            <span class="card-icon" aria-hidden="true">ॐ</span>
+            <h3>Fourteen Lokas</h3>
+            <p>Discover individual Loka detail pages and the lessons held within each realm.</p>
+            <span class="status">Content loaded from backend</span>
+          </a>
+          <a class="card card-link" href="#teachers" data-require-auth>
+            <span class="card-icon" aria-hidden="true">☼</span>
+            <h3>Teacher Chambers</h3>
+            <p>Enter chambers of Dharma, Bhakti, Sanskrit, Aryabhata, Saptarishi and Maharshi Kanad.</p>
+            <span class="status">6 chambers planned</span>
+          </a>
+          <a class="card card-link" href="#katha" data-require-auth>
+            <span class="card-icon" aria-hidden="true">❖</span>
+            <h3>Katha Mode</h3>
+            <p>Follow interactive stories and make choices that shape each learning mission.</p>
+            <span class="status">Story entry</span>
+          </a>
+          <a class="card card-link" href="#village" data-require-auth>
+            <span class="card-icon" aria-hidden="true">⌂</span>
+            <h3>Village of Destiny</h3>
+            <p>Test values through decision-based missions in a living village setting.</p>
+            <span class="status">Mission entry</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="section" id="practice" aria-labelledby="practice-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Play, practice, progress</p>
+            <h2 id="practice-title">Challenges and rewards</h2>
+          </div>
+        </div>
+        <div class="card-grid">
+          <a class="card card-link" href="#games" data-require-auth>
+            <span class="card-icon" aria-hidden="true">♞</span>
+            <h3>Fun Mode</h3>
+            <p>Open a future collection of playable educational games.</p>
+            <span class="status">Games from backend</span>
+          </a>
+          <a class="card card-link" href="#quests" data-require-auth>
+            <span class="card-icon" aria-hidden="true">⚑</span>
+            <h3>Quests &amp; Challenges</h3>
+            <p>Track exploration prompts and personal milestones.</p>
+            <span class="status status--success">Quest map</span>
+          </a>
+        </div>
+        <div id="practice-auth-note" style="display:none;margin-top:1rem;color:var(--color-beige);font-size:.9rem;">
+          Sign in to claim quest rewards and track your progress.
+        </div>
+      </section>
+
+      <footer class="site-footer">
+        Student module. Progress, rewards and identity require backend authentication and data integration.
+      </footer>
+    </main>
+
+  </div>
+
+  <div class="modal" id="journey-modal" role="dialog" aria-modal="true" aria-labelledby="journey-modal-title" hidden>
+    <div class="modal__content">
+      <button class="modal__close" type="button" data-modal-close aria-label="Close journey note">&times;</button>
+      <p class="eyebrow">Journey note</p>
+      <h2 id="journey-modal-title">Learning state</h2>
+      <p id="journey-modal-message">Connect to the backend to view your real progress, rewards and identity.</p>
+      <button class="button" type="button" data-modal-close>Understood</button>
+    </div>
+  </div>
+  <script type="module" src="../assets/js/student.js"></script>
+</body>
+</html>

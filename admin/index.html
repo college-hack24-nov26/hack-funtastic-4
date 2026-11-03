@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="MythoVerse administration module">
+  <title>MythoVerse | Admin Panel</title>
+  <link rel="stylesheet" href="../assets/css/admin.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to admin panel</a>
+  <div class="page-shell">
+    <header class="module-header">
+      <a class="brand-lockup" href="./" aria-label="MythoVerse admin panel">
+        <strong>MythoVerse</strong>
+        <span>Administration modules</span>
+      </a>
+      <nav class="module-nav" aria-label="Administration module navigation">
+        <a href="#content">Content</a>
+        <a href="#experience">Experiences</a>
+        <a href="#insights">Insights</a>
+        <a href="#profile" id="nav-admin-profile">Profile</a>
+        <a href="../student/">Student entry</a>
+      </nav>
+    </header>
+
+    <main id="main-content">
+      <section class="hero admin-hero" aria-labelledby="admin-title">
+        <div>
+          <p class="eyebrow">Steward the learning realm</p>
+          <h1 id="admin-title">MythoVerse control room.</h1>
+          <p class="lead">A focused entry point for configuring the student learning worlds, content and challenges.</p>
+        </div>
+        <aside class="hero-panel" aria-label="Administration session status">
+          <div id="admin-profile-loading" style="display:none;">
+            <p class="eyebrow">Loading session…</p>
+          </div>
+          <div id="admin-profile-unauthenticated" style="display:none;">
+            <p class="eyebrow">Not signed in</p>
+            <strong>Guest</strong>
+            <p>Administrator sign-in is required to manage content.</p>
+            <button class="button" type="button" data-action="admin-sign-in">Sign in as admin</button>
+          </div>
+          <div id="admin-profile-authenticated" style="display:none;">
+            <p class="eyebrow">Administrator session</p>
+            <strong id="admin-profile-name">Admin</strong>
+            <p id="admin-profile-role">Administrator</p>
+          </div>
+          <div id="admin-profile-error" style="display:none;color:var(--color-gold);">
+            <p class="eyebrow">Unable to load session</p>
+            <p id="admin-profile-error-message">Please try again later.</p>
+          </div>
+          <div id="admin-stats" style="display:none;margin-top:1.5rem;">
+            <p class="eyebrow">Platform overview</p>
+            <div class="dashboard-stats" style="gap:.75rem;">
+              <div class="stat"><strong id="stat-students">0</strong><span>Students</span></div>
+              <div class="stat"><strong id="stat-content">0</strong><span>Content items</span></div>
+              <div class="stat"><strong id="stat-quizzes">0</strong><span>Quizzes</span></div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="section" id="content" aria-labelledby="content-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Shape the curriculum</p>
+            <h2 id="content-title">Content management</h2>
+          </div>
+          <p id="content-auth-note" style="display:none;color:var(--color-beige);font-size:.9rem;margin-bottom:1rem;">Sign in as administrator to manage content.</p>
+        </div>
+        <div class="card-grid">
+          <article class="card admin-card" data-require-admin>
+            <span class="card-icon" aria-hidden="true">◈</span>
+            <h3>Students &amp; Guardians</h3>
+            <p>Plan the management surface for learner and guardian records.</p>
+            <span class="status">Planned interface</span>
+            <button class="button button--quiet" type="button" data-admin-action="Students & Guardians">Open preview</button>
+          </article>
+          <article class="card admin-card" data-require-admin>
+            <span class="card-icon" aria-hidden="true">☼</span>
+            <h3>Teachers &amp; Chapters</h3>
+            <p>Manage six teacher chambers, chapters and syllabus structure.</p>
+            <span class="status">Planned interface</span>
+            <button class="button button--quiet" type="button" data-admin-action="Teachers & Chapters">Open preview</button>
+          </article>
+          <article class="card admin-card" data-require-admin>
+            <span class="card-icon" aria-hidden="true">ॐ</span>
+            <h3>Loka Management</h3>
+            <p>Prepare the fourteen Loka records and individual learning destinations.</p>
+            <span class="status">Planned interface</span>
+            <button class="button button--quiet" type="button" data-admin-action="Loka Management">Open preview</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="experience" aria-labelledby="experience-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Build the experience</p>
+            <h2 id="experience-title">Worlds, stories and challenges</h2>
+          </div>
+        </div>
+        <div class="card-grid">
+          <article class="card admin-card" data-require-admin>
+            <span class="card-icon" aria-hidden="true">✦</span>
+            <h3>Ashram &amp; Village Builder</h3>
+            <p>Configure transformation stages, spaces and decision-based missions.</p>
+            <span class="status">Planned interface</span>
+            <button class="button button--quiet" type="button" data-admin-action="Ashram & Village Builder">Open preview</button>
+          </article>
+          <article class="card admin-card" data-require-admin>
+            <span class="card-icon" aria-hidden="true">❖</span>
+            <h3>Katha &amp; Story Manager</h3>
+            <p>Organize interactive stories and their learning choices.</p>
+            <span class="status">Planned interface</span>
+            <button class="button button--quiet" type="button" data-admin-action="Katha & Story Manager">Open preview</button>
+          </article>
+          <article class="card admin-card" data-require-admin>
+            <span class="card-icon" aria-hidden="true">♞</span>
+            <h3>Games &amp; Challenges</h3>
+            <p>Prepare the twelve Fun Mode games and challenge definitions.</p>
+            <span class="status">Planned interface</span>
+            <button class="button button--quiet" type="button" data-admin-action="Games & Challenges">Open preview</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="insights" aria-labelledby="insights-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Support the learning loop</p>
+            <h2 id="insights-title">Resources, rewards and insight</h2>
+          </div>
+        </div>
+        <div class="card-grid">
+          <article class="card admin-card" data-require-admin>
+            <h3>Library, Tests &amp; Exams</h3>
+            <p>Manage learning resources, Study Mode material and assessment interfaces.</p>
+            <span class="status">Planned interface</span>
+            <button class="button button--quiet" type="button" data-admin-action="Library, Tests & Exams">Open preview</button>
+          </article>
+          <article class="card admin-card" data-require-admin>
+            <h3>Dharma &amp; Rewards</h3>
+            <p>Define future reward and progression configuration surfaces.</p>
+            <span class="status">Planned interface</span>
+            <button class="button button--quiet" type="button" data-admin-action="Dharma & Rewards">Open preview</button>
+          </article>
+          <article class="card admin-card" data-require-admin>
+            <h3>Analytics &amp; Audit Logs</h3>
+            <p>Reserve space for operational insights and traceable administration activity.</p>
+            <span class="status">Planned interface</span>
+            <button class="button button--quiet" type="button" data-admin-action="Analytics & Audit Logs">Open preview</button>
+          </article>
+        </div>
+      </section>
+
+      <footer class="site-footer">
+        Admin module. Content management and publication require backend authentication and admin permissions.
+      </footer>
+    </main>
+
+  </div>
+
+  <div class="modal" id="admin-modal" role="dialog" aria-modal="true" aria-labelledby="admin-modal-title" hidden>
+    <div class="modal__content">
+      <button class="modal__close" type="button" data-modal-close aria-label="Close administration preview">&times;</button>
+      <p class="eyebrow">Session note</p>
+      <h2 id="admin-modal-title">Administration state</h2>
+      <p id="admin-modal-message">Connect to the backend as an administrator to manage real content.</p>
+      <button class="button" type="button" data-modal-close>Close preview</button>
+    </div>
+  </div>
+  <script type="module" src="../assets/js/admin.js"></script>
+</body>
+</html>
