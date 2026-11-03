@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Manage MythoVerse teacher profiles and age-group learning content.">
+    <title>Teacher Management | MythoVerse Admin</title>
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <script src="/assets/js/auth-client.js" defer></script>
+    <script src="/assets/js/admin-teachers.js" defer></script>
+  </head>
+  <body class="admin-body">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="admin-layout" id="admin-layout">
+      <aside class="admin-sidebar" aria-label="Admin sidebar">
+        <a class="brand admin-brand" href="/admin/dashboard.html"><span class="brand-mark" aria-hidden="true">M</span><span>MythoVerse <small>Admin</small></span></a>
+        <nav class="admin-navigation" aria-label="Admin navigation">
+          <a class="admin-nav-link" href="/admin/dashboard.html">Dashboard</a>
+          <a class="admin-nav-link" href="/admin/stories.html">Story management</a>
+          <a class="admin-nav-link" href="/admin/teachers.html" aria-current="page">Teacher management</a>
+          <button class="admin-nav-link admin-nav-logout" type="button" data-admin-logout>Log out</button>
+        </nav>
+      </aside>
+      <div class="admin-main-column">
+        <header class="admin-topbar"><a class="brand admin-mobile-brand" href="/admin/dashboard.html"><span class="brand-mark" aria-hidden="true">M</span><span>MythoVerse Admin</span></a><div class="admin-identity"><span class="admin-display-name" data-admin-display-name></span><span class="badge">Administrator</span><button class="button button-quiet" type="button" data-admin-logout>Log out</button></div></header>
+        <main id="main-content" class="admin-main"><div class="container admin-content" id="teacher-admin-page">
+          <p class="form-status admin-page-status" data-admin-teacher-status role="status" aria-live="polite">Verifying administrator access…</p>
+          <section data-admin-teacher-content hidden>
+            <p class="eyebrow">Gurukul curriculum</p><h1>Teacher management</h1>
+            <p class="admin-intro">Edit teacher profiles and complete age-specific syllabuses as JSON. Drafts stay private; publishing requires all five age paths, chapter assessments, and a reviewed content status.</p>
+            <p class="form-status" data-admin-teacher-feedback role="status" aria-live="polite" hidden></p>
+            <div class="admin-teacher-toolbar">
+              <label class="form-field"><span class="form-label">Publication filter</span><select class="form-control" data-teacher-filter><option value="all">All teachers</option><option value="draft">Drafts</option><option value="published">Published</option><option value="archived">Archived</option></select></label>
+              <button class="button button-secondary" type="button" data-new-teacher>New teacher</button>
+              <label class="form-field"><span class="form-label">Choose a teacher</span><select class="form-control" data-teacher-select><option value="">Select a teacher</option></select></label>
+            </div>
+            <form data-teacher-json-form class="admin-teacher-editor">
+              <label class="form-field"><span class="form-label">Teacher document</span><textarea class="form-control admin-teacher-json" data-teacher-json rows="28" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea></label>
+              <label class="admin-teacher-review-confirm"><input type="checkbox" data-confirm-content-review> I reviewed the sources, age-specific explanations, assessments, and answer keys for this teacher.</label>
+              <div class="admin-story-form-actions"><button class="button button-primary" type="submit" data-save-teacher disabled>Save draft</button><button class="button button-secondary" type="button" data-publish-teacher disabled>Publish teacher</button><button class="button button-quiet" type="button" data-unpublish-teacher disabled>Unpublish</button></div>
+            </form>
+            <details class="panel"><summary>Content structure guide</summary><p>Teacher profile fields include name, slug, identityType, title, shortIntroduction, mythologicalBackground, personality, teachingPhilosophy, teachingDomain, knowledgeAndSkills, biography, teachingStyle, portrait, sources, and contentReviewStatus.</p><p>Each ageGroups item has ageGroup, difficulty, learningObjectives, estimatedMinutes, and modules. Modules contain chapters; each chapter contains lessons and an assessment. Assessment questions keep correctAnswer and acceptedAnswers private until server-graded submission.</p></details>
+          </section>
+        </div></main>
+      </div>
+    </div>
+  </body>
+</html>

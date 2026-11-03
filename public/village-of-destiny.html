@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Explore the mythic realms of MythoVerse: Realms of Dharma.">
+    <title>Village of Destiny | MythoVerse</title>
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <link rel="stylesheet" href="/assets/css/village-of-destiny.css">
+    <script src="/assets/js/main.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js" defer></script>
+    <script src="/assets/js/village-of-destiny.js" defer></script>
+  </head>
+  <body class="village-page">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-component="header"></div>
+
+    <main id="main-content" class="page-main village-main">
+      <section class="game-hero" aria-labelledby="village-title">
+        <div>
+          <p class="eyebrow">Open-world action RPG</p>
+          <h1 id="village-title">MythoVerse: Realms of Dharma</h1>
+          <p>Explore the living village of Anandgram, ascend into the royal halls of Raj Mahal, cross the mythic forest, and uncover the ancient ruins before the shadow kin awaken.</p>
+        </div>
+        <div class="game-toolbar" aria-label="World actions">
+          <button class="button button-secondary game-button" id="resume-journey" type="button">Resume journey</button>
+          <button class="button button-primary game-button" id="quick-travel" type="button">Fast travel</button>
+        </div>
+      </section>
+
+      <div class="game-layout">
+        <aside class="panel-card" aria-label="Quest log and hero stats">
+          <div>
+            <p class="eyebrow">Quest log</p>
+            <h2>Village of Destiny</h2>
+          </div>
+          <ul id="quest-list" class="quest-list" aria-live="polite">
+            <li class="quest-item is-active"><strong>Awaken in Anandgram</strong><small>Visit the village square and greet the elders.</small></li>
+            <li class="quest-item"><strong>Enter the palace</strong><small>Unlock the secret courtyard of Raj Mahal.</small></li>
+            <li class="quest-item"><strong>Ward the sacred grove</strong><small>Defend the forest shrine from shadow spirits.</small></li>
+            <li class="quest-item"><strong>Recover the starstone</strong><small>Find the lost relic in the Ancient Ruins.</small></li>
+          </ul>
+
+          <div class="status-grid" aria-label="Hero stats">
+            <div class="status-row">
+              <label for="health-meter"><span>Health</span><strong id="health-value">100%</strong></label>
+              <div class="meter" id="health-meter"><span class="meter-fill" id="health-fill" style="width:100%"></span></div>
+            </div>
+            <div class="status-row">
+              <label for="stamina-meter"><span>Stamina</span><strong id="stamina-value">100%</strong></label>
+              <div class="meter" id="stamina-meter"><span class="meter-fill" id="stamina-fill" style="width:100%; background: linear-gradient(90deg, #76b8e4, #7ae2cc);"></span></div>
+            </div>
+            <div class="status-row">
+              <label for="dharma-meter"><span>Dharma</span><strong id="dharma-value">72</strong></label>
+              <div class="meter" id="dharma-meter"><span class="meter-fill" id="dharma-fill" style="width:72%; background: linear-gradient(90deg, #8fd2a4, #b5d95f);"></span></div>
+            </div>
+          </div>
+        </aside>
+
+        <div class="game-scene-wrap" aria-label="Playable world scene">
+          <canvas id="game-canvas" aria-label="3D village scene"></canvas>
+          <div id="game-message" class="game-message" aria-live="polite">A calm dawn settles over Anandgram. The path of Dharma is yours to discover.</div>
+        </div>
+
+        <aside class="panel-card" aria-label="World navigation and controls">
+          <div>
+            <p class="eyebrow">Current location</p>
+            <h3 id="current-region">Anandgram</h3>
+          </div>
+          <div class="region-grid" aria-label="World regions">
+            <button class="region-button" data-region="Anandgram" type="button">Anandgram<small>Village Square</small></button>
+            <button class="region-button" data-region="Raj Mahal" type="button">Raj Mahal<small>Royal courtyard</small></button>
+            <button class="region-button" data-region="Mythic Forest" type="button">Mythic Forest<small>Ancient grove</small></button>
+            <button class="region-button" data-region="Ancient Ruins" type="button">Ancient Ruins<small>Sunken relics</small></button>
+          </div>
+
+          <h3 style="margin-top: 1.25rem;">Controls</h3>
+          <p>Move with W, A, S, D or the arrow keys. Press Space to strike or attack. Use the touch pad below on mobile.</p>
+          <div class="mobile-controls" aria-label="Touch controls">
+            <button class="touch-button" data-control="up" type="button">↑</button>
+            <button class="touch-button" data-control="left" type="button">←</button>
+            <button class="touch-button" data-control="down" type="button">↓</button>
+            <button class="touch-button" data-control="right" type="button">→</button>
+            <button class="touch-button" data-control="attack" type="button">⚔</button>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <div data-component="footer"></div>
+  </body>
+</html>

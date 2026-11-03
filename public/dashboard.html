@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Your personalized MythoVerse student dashboard.">
+    <title>Student Dashboard | MythoVerse</title>
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <link rel="stylesheet" href="/assets/css/student-dashboard.css">
+    <script src="/assets/js/auth-client.js" defer></script>
+    <script src="/assets/js/main.js" defer></script>
+    <script src="/assets/js/dashboard.js" defer></script>
+  </head>
+  <body class="student-dashboard">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-component="header"></div>
+
+    <main id="main-content" class="page-main student-page dashboard-page">
+      <div id="dashboard-status" class="container form-status student-page-status" role="status" aria-live="polite">
+        Checking your sign-in and preparing your dashboard…
+      </div>
+      <div class="container"><button class="button button-secondary" type="button" data-dashboard-retry hidden>Retry dashboard data</button></div>
+
+      <div class="container dashboard-layout" data-dashboard-content hidden>
+        <aside class="student-sidebar" data-student-sidebar>
+          <div class="student-sidebar-heading">
+            <p class="eyebrow">Learning space</p>
+          </div>
+          <nav id="student-dashboard-navigation" class="student-dashboard-navigation" aria-label="Student dashboard">
+            <a class="dashboard-nav-link" href="/dashboard.html" data-dashboard-nav="dashboard">Dashboard</a>
+            <details open>
+              <summary>Courses</summary>
+              <a class="dashboard-nav-link" href="/dashboard.html?view=courses" data-dashboard-nav="courses">Learning paths</a>
+              <a class="dashboard-nav-link" href="/dashboard.html?view=course" data-dashboard-nav="course">Course syllabus</a>
+            </details>
+            <details>
+              <summary>Assignments</summary>
+              <a class="dashboard-nav-link" href="/dashboard.html?view=assignments" data-dashboard-nav="assignments">Available assessments</a>
+              <a class="dashboard-nav-link" href="/dashboard.html?view=submissions" data-dashboard-nav="submissions">My submissions</a>
+            </details>
+            <details>
+              <summary>Grades</summary>
+              <a class="dashboard-nav-link" href="/dashboard.html?view=gradebook" data-dashboard-nav="gradebook">Gradebook</a>
+              <a class="dashboard-nav-link" href="/dashboard.html?view=progress" data-dashboard-nav="progress">Learning progress</a>
+            </details>
+            <details>
+              <summary>Calendar</summary>
+              <a class="dashboard-nav-link" href="/dashboard.html?view=classes" data-dashboard-nav="classes">Class schedule</a>
+              <a class="dashboard-nav-link" href="/dashboard.html?view=events" data-dashboard-nav="events">Events</a>
+              <a class="dashboard-nav-link" href="/dashboard.html?view=exams" data-dashboard-nav="exams">Assessment dates</a>
+            </details>
+            <details>
+              <summary>Library</summary>
+              <a class="dashboard-nav-link" href="/dashboard.html?view=resources" data-dashboard-nav="resources">Story resources</a>
+              <a class="dashboard-nav-link" href="/dashboard.html?view=downloads" data-dashboard-nav="downloads">Downloads</a>
+            </details>
+            <a class="dashboard-nav-link" href="/dashboard.html?view=announcements" data-dashboard-nav="announcements">Announcements</a>
+            <details>
+              <summary>Settings</summary>
+              <a class="dashboard-nav-link" href="/dashboard.html?view=settings" data-dashboard-nav="settings">Preferences</a>
+              <a class="dashboard-nav-link" href="/dashboard.html?view=notifications" data-dashboard-nav="notifications">Notifications</a>
+              <a class="dashboard-nav-link" href="/dashboard.html?view=security" data-dashboard-nav="security">Security</a>
+              <a class="dashboard-nav-link" href="/dashboard.html?view=appearance" data-dashboard-nav="appearance">Appearance</a>
+            </details>
+          </nav>
+        </aside>
+        <div class="student-dashboard-main">
+        <div class="student-dashboard-toolbar">
+          <button class="button button-quiet student-sidebar-toggle" type="button" aria-expanded="true" aria-controls="student-dashboard-navigation" data-sidebar-toggle>
+            <span aria-hidden="true">☰</span><span>Menu</span>
+          </button>
+          <a class="button button-quiet" href="/dashboard.html?view=notifications">Notification preferences</a>
+        </div>
+        <div class="dashboard-shell" data-dashboard-view="dashboard">
+        <section class="dashboard-welcome" aria-labelledby="dashboard-title">
+          <div>
+            <p class="eyebrow">Your learning space</p>
+            <h1 id="dashboard-title">Welcome, <span data-dashboard-name>student</span></h1>
+            <p class="dashboard-lead">Follow your curiosity through age-specific learning paths, stories, and thoughtful challenges.</p>
+          </div>
+          <a class="button button-secondary" href="/dashboard.html?view=courses">Explore learning paths</a>
+        </section>
+
+        <section class="dashboard-summary-grid" aria-label="Student overview">
+          <article class="dashboard-summary-card card">
+            <p class="eyebrow">Learning group</p>
+            <p class="dashboard-summary-value" data-dashboard-age>Not set</p>
+          </article>
+          <article class="dashboard-summary-card card">
+            <p class="eyebrow">Teacher learning paths</p>
+            <p class="dashboard-summary-value" data-dashboard-course-count>—</p>
+          </article>
+          <article class="dashboard-summary-card card">
+            <p class="eyebrow">Assessments completed</p>
+            <p class="dashboard-summary-value" data-dashboard-assessment-count>—</p>
+          </article>
+        </section>
+
+        <section class="dashboard-section dashboard-activity-grid" aria-label="Values and learning journey">
+          <article class="dashboard-content-card card" aria-labelledby="dharma-summary-title">
+            <p class="eyebrow">Your values journey</p>
+            <h2 id="dharma-summary-title">Dharma summary</h2>
+            <p data-dharma-status class="dashboard-empty-copy">Loading verified score information…</p>
+            <dl class="dashboard-detail-list">
+              <div><dt>Dharma points</dt><dd data-dharma-points>Unavailable</dd></div>
+              <div><dt>Adharma points</dt><dd data-adharma-points>Unavailable</dd></div>
+              <div><dt>Current Loka</dt><dd data-current-loka>Unavailable</dd></div>
+            </dl>
+          </article>
+          <article class="dashboard-content-card card" aria-labelledby="ashram-title">
+            <p class="eyebrow">Your learning journey</p>
+            <h2 id="ashram-title">Ashram progress</h2>
+            <p data-ashram-status class="dashboard-empty-copy">Loading Ashram progression…</p>
+            <p data-ashram-next></p>
+            <progress data-ashram-progress max="100" value="0" aria-label="Ashram progress">0%</progress>
+          </article>
+        </section>
+
+        <section class="dashboard-section" aria-labelledby="loka-system-title">
+          <div class="dashboard-section-heading"><div><p class="eyebrow">Progress from effective Dharma</p><h2 id="loka-system-title">Loka system</h2></div></div>
+          <p data-loka-status class="dashboard-empty-copy"></p>
+          <div class="dashboard-module-grid" data-loka-list></div>
+        </section>
+
+        <section class="dashboard-section" aria-labelledby="announcements-title">
+          <div class="dashboard-section-heading"><div><p class="eyebrow">From MythoVerse</p><h2 id="announcements-title">Announcements</h2></div></div>
+          <p class="form-status" data-announcements-status role="status" aria-live="polite">Loading announcements…</p>
+          <div class="dashboard-module-grid" data-dashboard-announcements hidden></div>
+        </section>
+
+        <section class="dashboard-section" aria-labelledby="weekly-progress-title">
+          <div class="dashboard-section-heading"><div><p class="eyebrow">Your learning activity</p><h2 id="weekly-progress-title">Weekly progress</h2></div></div>
+          <p class="form-status" data-weekly-status role="status" aria-live="polite">Loading this week’s activity…</p>
+          <ol class="dashboard-summary-grid" data-weekly-activity hidden aria-label="Activity for the last seven days"></ol>
+        </section>
+
+        <section class="dashboard-section dashboard-activity-grid" aria-label="Today's test and parent access">
+          <article class="dashboard-content-card card" aria-labelledby="today-test-title">
+            <p class="eyebrow">A recommended challenge</p><h2 id="today-test-title">Today’s test</h2>
+            <div data-today-test><p class="dashboard-empty-copy">Checking published assessments…</p></div>
+          </article>
+          <article class="dashboard-content-card card" aria-labelledby="parent-access-title">
+            <p class="eyebrow">Family connections</p><h2 id="parent-access-title">Parent access</h2>
+            <p class="dashboard-empty-copy" data-parent-status>Checking parent access…</p>
+            <form data-guardian-invite-form>
+              <label class="form-label" for="guardian-email">Guardian email</label>
+              <input class="form-control" id="guardian-email" name="email" type="email" autocomplete="email" required maxlength="254">
+              <label class="form-label" for="guardian-relationship">Relationship</label>
+              <select class="form-control" id="guardian-relationship" name="relationship" required><option value="parent">Parent</option><option value="guardian">Guardian</option><option value="other">Other</option></select>
+              <button class="button button-secondary" type="submit" data-guardian-invite-submit>Send verified invite</button>
+            </form>
+            <p class="form-status" data-guardian-feedback role="status" aria-live="polite" hidden></p>
+            <div data-approved-parents></div>
+          </article>
+        </section>
+
+        <section class="dashboard-section" aria-labelledby="learning-progress-title">
+          <div class="dashboard-section-heading">
+            <div>
+              <p class="eyebrow">Your progress</p>
+              <h2 id="learning-progress-title">Learning progress</h2>
+            </div>
+          </div>
+          <div class="learning-summary-grid" data-learning-summary>
+            <p class="form-status" data-learning-status role="status" aria-live="polite" hidden></p>
+            <article class="learning-summary-card card"><p class="eyebrow">Published stories</p><p class="dashboard-summary-value" data-learning-available>—</p></article>
+            <article class="learning-summary-card card"><p class="eyebrow">Stories started</p><p class="dashboard-summary-value" data-learning-started>—</p></article>
+            <article class="learning-summary-card card"><p class="eyebrow">Lessons completed</p><p class="dashboard-summary-value" data-learning-completed>—</p></article>
+            <article class="learning-summary-card card"><p class="eyebrow">Lesson progress</p><p class="dashboard-summary-value"><span data-learning-percentage>0</span>%</p><progress data-learning-progress max="100" value="0" aria-label="Lesson completion progress">0%</progress></article>
+          </div>
+        </section>
+
+        <section class="dashboard-section dashboard-activity-grid" aria-label="Learning activity and achievements">
+          <article class="dashboard-content-card card" aria-labelledby="continue-learning-title">
+            <p class="eyebrow">Pick up where you left off</p>
+            <h2 id="continue-learning-title">Continue learning</h2>
+            <p class="dashboard-empty-copy" data-continue-empty>You haven’t opened a lesson yet. Choose a story below to begin.</p>
+            <div data-continue-content hidden>
+              <p class="eyebrow" data-continue-chapter></p>
+              <h3 data-continue-story></h3>
+              <p data-continue-lesson></p>
+              <a class="button button-primary" data-continue-link href="/stories.html">Continue reading</a>
+            </div>
+          </article>
+          <article class="dashboard-content-card card" aria-labelledby="achievements-title">
+            <p class="eyebrow">Milestones along the way</p>
+            <h2 id="achievements-title">Achievements</h2>
+            <p class="dashboard-empty-copy">No achievements yet. Complete future learning activities to collect milestones here.</p>
+          </article>
+        </section>
+
+        <section class="dashboard-section" aria-labelledby="available-stories-title">
+          <div class="dashboard-section-heading">
+            <div>
+              <p class="eyebrow">Begin a new journey</p>
+              <h2 id="available-stories-title">Available stories</h2>
+            </div>
+            <a class="button button-quiet" href="/stories.html">View all stories</a>
+          </div>
+          <p id="dashboard-stories-status" class="form-status" role="status" aria-live="polite">Loading stories…</p>
+          <div class="story-card-grid dashboard-story-grid" data-dashboard-stories hidden></div>
+        </section>
+
+        <section class="dashboard-section" aria-labelledby="my-teachers-title">
+          <div class="dashboard-section-heading">
+            <div><p class="eyebrow">Guides for your learning journey</p><h2 id="my-teachers-title">My Teachers</h2></div>
+            <a class="button button-quiet" href="/teachers.html">View all teachers</a>
+          </div>
+          <p class="form-status" data-teachers-dashboard-status role="status" aria-live="polite">Loading teacher progress…</p>
+          <div class="teacher-card-grid dashboard-teacher-grid" data-dashboard-teachers hidden></div>
+        </section>
+
+        <section class="dashboard-section" aria-labelledby="modules-title">
+          <div class="dashboard-section-heading">
+            <div>
+              <p class="eyebrow">Other learning paths</p>
+              <h2 id="modules-title">More learning modules</h2>
+            </div>
+            <p class="muted">Unavailable modules are shown honestly until their content and backend are ready.</p>
+          </div>
+          <div class="dashboard-module-grid">
+            <article class="dashboard-module-card card">
+              <span class="dashboard-module-number" aria-hidden="true">01</span>
+              <h3>Six Teachers</h3>
+              <p>Meet guides for a journey of questions, reflection, and learning.</p>
+              <a class="button button-secondary" href="/teachers.html">Explore all six teachers</a>
+            </article>
+            <article class="dashboard-module-card card">
+              <span class="dashboard-module-number" aria-hidden="true">02</span>
+              <h3>Mythological Stories</h3>
+              <p>Explore stories and the ideas they have carried across generations.</p>
+              <a class="button button-secondary" href="/stories.html">Explore stories</a>
+            </article>
+            <article class="dashboard-module-card card">
+              <span class="dashboard-module-number" aria-hidden="true">03</span>
+              <h3>Fourteen Lokas</h3>
+              <p>Discover a mythic cosmology through context and storytelling.</p>
+              <a class="button button-secondary" href="#loka-system-title">View your Loka progress</a>
+            </article>
+            <article class="dashboard-module-card card">
+              <span class="dashboard-module-number" aria-hidden="true">04</span>
+              <h3>Dharma Situations</h3>
+              <p>No published Dharma situation scenarios are configured yet.</p>
+              <span class="badge">Unavailable</span>
+            </article>
+            <article class="dashboard-module-card card">
+              <span class="dashboard-module-number" aria-hidden="true">05</span>
+              <h3>Fun Mode</h3>
+              <p>No published games, mysteries, or challenges are configured yet.</p>
+              <span class="badge">Unavailable</span>
+            </article>
+            <article class="dashboard-module-card card">
+              <span class="dashboard-module-number" aria-hidden="true">06</span>
+              <h3>Village of Destiny</h3>
+              <p>Embark on an open-world mythic journey through Anandgram, the palace, the forest, and the ruins.</p>
+              <a class="button button-secondary" href="/village-of-destiny.html">Enter the realm</a>
+            </article>
+            <article class="dashboard-module-card card">
+              <span class="dashboard-module-number" aria-hidden="true">07</span>
+              <h3>Katha Mode</h3>
+              <p>Continue a story using your saved reading progress.</p>
+              <a class="button button-secondary" href="/stories.html">Open Story Library</a>
+            </article>
+          </div>
+        </section>
+
+        </div>
+
+        <section class="dashboard-view" data-dashboard-view="courses" hidden aria-labelledby="courses-view-title">
+          <p class="eyebrow">Your teachers and their age-specific curriculum</p>
+          <h1 id="courses-view-title">Learning paths</h1>
+          <p class="dashboard-lead">Explore published teacher pathways and continue lessons using your saved progress.</p>
+          <p class="form-status" data-view-status role="status" aria-live="polite">Loading learning paths…</p>
+          <div class="teacher-card-grid" data-view-content></div>
+        </section>
+        <section class="dashboard-view" data-dashboard-view="course" hidden aria-labelledby="course-view-title">
+          <p class="eyebrow">Age-specific syllabus, modules, chapters, and lessons</p>
+          <h1 id="course-view-title">Course syllabus</h1>
+          <p class="form-status" data-view-status role="status" aria-live="polite">Choose a learning path to view its syllabus.</p>
+          <div data-view-content></div>
+        </section>
+        <section class="dashboard-view" data-dashboard-view="assignments" hidden aria-labelledby="assignments-view-title">
+          <p class="eyebrow">Published teacher assessments</p>
+          <h1 id="assignments-view-title">Available assessments</h1>
+          <p class="dashboard-lead">These are published quizzes in your current learning paths. MythoVerse does not currently assign deadlines.</p>
+          <p class="form-status" data-view-status role="status" aria-live="polite">Loading assessments…</p>
+          <div class="dashboard-module-grid" data-view-content></div>
+        </section>
+        <section class="dashboard-view" data-dashboard-view="submissions" hidden aria-labelledby="submissions-view-title">
+          <p class="eyebrow">Your saved assessment attempts</p>
+          <h1 id="submissions-view-title">My submissions</h1>
+          <p class="form-status" data-view-status role="status" aria-live="polite">Loading submissions…</p>
+          <div data-view-content></div>
+        </section>
+        <section class="dashboard-view" data-dashboard-view="gradebook" hidden aria-labelledby="gradebook-view-title">
+          <p class="eyebrow">Scores from automatically graded assessments</p>
+          <h1 id="gradebook-view-title">Gradebook</h1>
+          <p class="form-status" data-view-status role="status" aria-live="polite">Loading assessment results…</p>
+          <div data-view-content></div>
+        </section>
+        <section class="dashboard-view" data-dashboard-view="progress" hidden aria-labelledby="progress-view-title">
+          <p class="eyebrow">Saved teacher, story, and lesson progress</p>
+          <h1 id="progress-view-title">Learning progress</h1>
+          <p class="form-status" data-view-status role="status" aria-live="polite">Loading progress…</p>
+          <div class="dashboard-module-grid" data-view-content></div>
+        </section>
+        <section class="dashboard-view" data-dashboard-view="calendar" hidden aria-labelledby="calendar-view-title">
+          <p class="eyebrow">Learning dates</p>
+          <h1 id="calendar-view-title" data-calendar-title>Calendar</h1>
+          <p class="form-status" data-view-status role="status" aria-live="polite">Checking scheduled learning dates…</p>
+          <div data-view-content></div>
+        </section>
+        <section class="dashboard-view" data-dashboard-view="resources" hidden aria-labelledby="resources-view-title">
+          <p class="eyebrow">Published stories and learning content</p>
+          <h1 id="resources-view-title">Story library</h1>
+          <form class="dashboard-search" data-resource-search>
+            <label class="form-label" for="resource-search">Search stories</label>
+            <input class="form-control" id="resource-search" name="search" type="search" maxlength="120">
+            <button class="button button-secondary" type="submit">Search</button>
+          </form>
+          <p class="form-status" data-view-status role="status" aria-live="polite">Loading library…</p>
+          <div class="story-card-grid" data-view-content></div>
+        </section>
+        <section class="dashboard-view" data-dashboard-view="downloads" hidden aria-labelledby="downloads-view-title">
+          <p class="eyebrow">Resource activity</p>
+          <h1 id="downloads-view-title">Downloads</h1>
+          <p class="form-status" data-view-status role="status" aria-live="polite">Checking download history…</p>
+          <div data-view-content></div>
+        </section>
+        <section class="dashboard-view" data-dashboard-view="announcements" hidden aria-labelledby="announcements-view-title">
+          <p class="eyebrow">Updates for MythoVerse learners</p>
+          <h1 id="announcements-view-title">Announcements</h1>
+          <p class="form-status" data-view-status role="status" aria-live="polite">Loading announcements…</p>
+          <div class="dashboard-module-grid" data-view-content></div>
+        </section>
+        <section class="dashboard-view" data-dashboard-view="announcement" hidden aria-labelledby="announcement-view-title">
+          <p class="eyebrow">MythoVerse announcement</p>
+          <h1 id="announcement-view-title">Announcement</h1>
+          <p class="form-status" data-view-status role="status" aria-live="polite">Loading announcement…</p>
+          <article class="dashboard-content-card card" data-view-content></article>
+        </section>
+        <section class="dashboard-view" data-dashboard-view="settings" hidden aria-labelledby="settings-view-title">
+          <p class="eyebrow">Learning preferences and account security</p>
+          <h1 id="settings-view-title">Settings</h1>
+          <p class="form-status" data-settings-status role="status" aria-live="polite">Loading settings…</p>
+          <form class="dashboard-settings-form" data-preferences-form>
+            <label class="form-label" for="settings-timezone">Timezone</label>
+            <input class="form-control" id="settings-timezone" name="timeZone" maxlength="100" required>
+            <label class="form-label" for="settings-theme">Appearance</label>
+            <select class="form-control" id="settings-theme" name="theme"><option value="dark">Dark</option><option value="light">Light</option></select>
+            <label class="form-label" for="settings-font-size">Text size</label>
+            <select class="form-control" id="settings-font-size" name="fontSize"><option value="standard">Standard</option><option value="large">Large</option></select>
+            <button class="button button-primary" type="submit">Save preferences</button>
+          </form>
+          <h2 class="dashboard-settings-heading">Notifications</h2>
+          <form class="dashboard-settings-form" data-notifications-form>
+            <label><input type="checkbox" name="learningReminders"> Learning reminders</label>
+            <label><input type="checkbox" name="assessmentNotifications"> Assessment updates</label>
+            <label><input type="checkbox" name="announcementNotifications"> Announcements</label>
+            <label><input type="checkbox" name="achievementNotifications"> Achievements</label>
+            <button class="button button-secondary" type="submit">Save notifications</button>
+          </form>
+          <h2 class="dashboard-settings-heading">Change password</h2>
+          <form class="dashboard-settings-form" data-password-form>
+            <label class="form-label" for="settings-current-password">Current password</label>
+            <input class="form-control" id="settings-current-password" name="currentPassword" type="password" autocomplete="current-password" required>
+            <label class="form-label" for="settings-new-password">New password</label>
+            <input class="form-control" id="settings-new-password" name="newPassword" type="password" autocomplete="new-password" minlength="12" maxlength="72" required>
+            <button class="button button-secondary" type="submit">Change password</button>
+          </form>
+        </section>
+        </div>
+      </div>
+    </main>
+
+    <div data-component="footer"></div>
+  </body>
+</html>

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Authorized administrator sign-in for MythoVerse.">
+    <title>Administrator Login | MythoVerse</title>
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <script src="/assets/js/auth-client.js" defer></script>
+    <script src="/assets/js/admin-login.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <main id="main-content" class="page-main auth-page admin-login-page">
+      <section class="auth-card auth-card-compact card" aria-labelledby="admin-login-title">
+        <a class="brand admin-login-brand" href="/" aria-label="MythoVerse home">
+          <span class="brand-mark" aria-hidden="true">M</span>
+          <span>MythoVerse</span>
+        </a>
+        <div class="auth-heading">
+          <p class="eyebrow">Authorized access only</p>
+          <h1 id="admin-login-title">Administrator login</h1>
+          <p class="muted">Sign in with an authorized MythoVerse administrator account.</p>
+        </div>
+
+        <form id="admin-login-form" class="auth-form" novalidate>
+          <div class="form-field">
+            <label class="form-label" for="admin-login-email">Email</label>
+            <input
+              class="form-control"
+              id="admin-login-email"
+              name="email"
+              type="email"
+              autocomplete="username"
+              inputmode="email"
+              maxlength="254"
+              required
+              aria-describedby="admin-login-email-error"
+            >
+            <p class="form-error" id="admin-login-email-error" hidden></p>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="admin-login-password">Password</label>
+            <div class="password-control">
+              <input
+                class="form-control"
+                id="admin-login-password"
+                name="password"
+                type="password"
+                autocomplete="current-password"
+                required
+                aria-describedby="admin-login-password-error"
+              >
+              <button
+                class="password-toggle"
+                type="button"
+                data-toggle-admin-password
+                aria-controls="admin-login-password"
+                aria-pressed="false"
+              >Show</button>
+            </div>
+            <p class="form-error" id="admin-login-password-error" hidden></p>
+          </div>
+
+          <p class="form-status" id="admin-login-status" role="status" aria-live="polite" hidden></p>
+          <button class="button button-primary auth-submit" type="submit">Sign in</button>
+        </form>
+
+        <p class="auth-alternate"><a href="/">Return to the public website</a></p>
+      </section>
+    </main>
+  </body>
+</html>

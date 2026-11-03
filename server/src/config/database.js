@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-async function connectDatabase(uri) {
+async function connectDatabase(uri, options = {}) {
   if (!uri) {
     throw new Error('MONGODB_URI is not configured.');
   }
@@ -10,7 +10,8 @@ async function connectDatabase(uri) {
   });
 
   await mongoose.connect(uri, {
-    serverSelectionTimeoutMS: 5000
+    serverSelectionTimeoutMS: 5000,
+    ...options
   });
 }
 

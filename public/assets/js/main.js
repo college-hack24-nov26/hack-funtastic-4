@@ -25,6 +25,9 @@ async function loadComponent(container) {
     if (componentName === 'header') {
       initializeNavigation(container);
       setCurrentPage(container);
+      if (typeof window.MythoVerseAuth?.initializeHeader === 'function') {
+        window.MythoVerseAuth.initializeHeader(container);
+      }
     } else if (componentName === 'footer') {
       setCurrentYear(container);
     }

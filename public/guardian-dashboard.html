@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Guardian Dashboard | MythoVerse</title>
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <script src="/assets/js/auth-client.js" defer></script>
+    <script src="/assets/js/guardian-dashboard.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-component="header"></div>
+    <main id="main-content" class="page-main">
+      <div class="container dashboard-shell">
+        <p class="eyebrow">Verified family access</p>
+        <h1>Guardian dashboard</h1>
+        <p class="form-status" data-guardian-dashboard-status role="status" aria-live="polite">Checking your access…</p>
+        <section data-guardian-dashboard-content hidden>
+          <div class="dashboard-module-grid" data-guardian-students></div>
+          <section class="dashboard-section" data-guardian-student-summary hidden>
+            <h2 data-guardian-student-name></h2>
+            <p data-guardian-student-age></p>
+            <div class="dashboard-summary-grid" data-guardian-summary-grid></div>
+            <ol class="dashboard-summary-grid" data-guardian-week></ol>
+          </section>
+        </section>
+        <button class="button button-quiet" type="button" data-guardian-logout>Log out</button>
+      </div>
+    </main>
+    <div data-component="footer"></div>
+  </body>
+</html>

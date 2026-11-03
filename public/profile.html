@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="View and update your private MythoVerse student profile.">
+    <title>My Student Profile | MythoVerse</title>
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <script src="/assets/js/auth-client.js" defer></script>
+    <script src="/assets/js/main.js" defer></script>
+    <script src="/assets/js/student-page.js" defer></script>
+    <script src="/assets/js/profile.js" defer></script>
+  </head>
+  <body data-student-page="profile">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-component="header"></div>
+
+    <main id="main-content" class="page-main student-page">
+      <div id="student-page-status" class="container form-status student-page-status" role="status" aria-live="polite">
+        Checking your sign-in and profile…
+      </div>
+
+      <section id="profile-content" class="container profile-shell" data-student-page-content aria-labelledby="profile-page-title" hidden>
+        <div class="profile-page-heading">
+          <div>
+            <p class="eyebrow">Your MythoVerse account</p>
+            <h1 id="profile-page-title">My student profile</h1>
+          </div>
+          <button class="button button-secondary" type="button" data-profile-edit>Edit profile</button>
+        </div>
+
+        <p id="profile-status" class="form-status" role="status" aria-live="polite" hidden></p>
+
+        <section data-profile-display aria-labelledby="profile-name" class="profile-card card">
+          <div class="profile-identity">
+            <div class="profile-avatar-wrap" aria-label="Profile picture">
+              <img data-profile-avatar alt="" referrerpolicy="no-referrer" hidden>
+              <span data-profile-initials class="profile-initials" aria-hidden="true"></span>
+            </div>
+            <div class="profile-identity-copy">
+              <h2 id="profile-name" data-profile-name></h2>
+              <p data-profile-email></p>
+              <span class="badge" data-profile-age-group></span>
+            </div>
+            <span class="badge profile-completion-badge" data-profile-completion></span>
+          </div>
+          <div class="profile-progress">
+            <progress data-profile-progress max="100" value="0">0%</progress>
+            <span data-profile-progress-label></span>
+          </div>
+
+          <div class="profile-details-grid">
+            <section class="profile-detail-group" aria-labelledby="profile-personal-heading">
+              <h3 id="profile-personal-heading">Personal information</h3>
+              <dl class="profile-detail-list">
+                <div><dt>Display name</dt><dd data-profile-name></dd></div>
+                <div><dt>Email address</dt><dd data-profile-email></dd></div>
+                <div><dt>Date of birth</dt><dd data-profile-date-of-birth></dd></div>
+                <div><dt>Age group</dt><dd data-profile-age-group></dd></div>
+              </dl>
+            </section>
+            <section class="profile-detail-group" aria-labelledby="profile-education-heading">
+              <h3 id="profile-education-heading">Education</h3>
+              <dl class="profile-detail-list">
+                <div><dt>School</dt><dd data-profile-school></dd></div>
+                <div><dt>Class or grade</dt><dd data-profile-grade></dd></div>
+              </dl>
+            </section>
+            <section class="profile-detail-group" aria-labelledby="profile-learning-heading">
+              <h3 id="profile-learning-heading">Learning preferences</h3>
+              <dl class="profile-detail-list">
+                <div><dt>Preferred language</dt><dd data-profile-language></dd></div>
+                <div><dt>Interests</dt><dd><ul class="profile-interest-list" data-profile-interests></ul></dd></div>
+              </dl>
+            </section>
+          </div>
+        </section>
+
+        <form id="profile-edit-form" class="profile-edit-card card" novalidate hidden>
+          <div class="profile-edit-heading">
+            <p class="eyebrow">Update your details</p>
+            <h2>Edit profile</h2>
+            <p class="muted">Your email and account role are managed separately and cannot be changed here.</p>
+          </div>
+          <div class="profile-edit-grid">
+            <div class="form-field">
+              <label class="form-label" for="profile-display-name">Display name</label>
+              <input class="form-control" id="profile-display-name" name="displayName" type="text" autocomplete="nickname" minlength="2" maxlength="80" required aria-describedby="profile-display-name-error">
+              <p class="form-error" id="profile-display-name-error" hidden></p>
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="profile-picture-url">Profile picture URL <span class="muted">(optional)</span></label>
+              <input class="form-control" id="profile-picture-url" name="profilePictureUrl" type="url" inputmode="url" maxlength="500" aria-describedby="profile-picture-url-error">
+              <p class="form-error" id="profile-picture-url-error" hidden></p>
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="profile-date-of-birth">Date of birth <span class="muted">(optional)</span></label>
+              <input class="form-control" id="profile-date-of-birth" name="dateOfBirth" type="date" autocomplete="bday" aria-describedby="profile-date-of-birth-error">
+              <p class="form-error" id="profile-date-of-birth-error" hidden></p>
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="profile-age-group">Age group</label>
+              <select class="form-control" id="profile-age-group" name="ageGroup" required aria-describedby="profile-age-group-error">
+                <option value="">Choose an age group</option>
+                <option value="6-8">6–8</option>
+                <option value="9-12">9–12</option>
+                <option value="13-15">13–15</option>
+                <option value="16-18">16–18</option>
+                <option value="18+">18+</option>
+              </select>
+              <p class="form-error" id="profile-age-group-error" hidden></p>
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="profile-school">School name <span class="muted">(optional)</span></label>
+              <input class="form-control" id="profile-school" name="schoolName" type="text" autocomplete="organization" maxlength="100" aria-describedby="profile-school-error">
+              <p class="form-error" id="profile-school-error" hidden></p>
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="profile-grade">Class or grade <span class="muted">(optional)</span></label>
+              <input class="form-control" id="profile-grade" name="grade" type="text" maxlength="40" aria-describedby="profile-grade-error">
+              <p class="form-error" id="profile-grade-error" hidden></p>
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="profile-language">Preferred language</label>
+              <select class="form-control" id="profile-language" name="preferredLanguage" required aria-describedby="profile-language-error">
+                <option value="">Choose a language</option>
+                <option value="English">English</option>
+                <option value="Hindi">Hindi</option>
+                <option value="Sanskrit">Sanskrit</option>
+              </select>
+              <p class="form-error" id="profile-language-error" hidden></p>
+            </div>
+          </div>
+          <fieldset class="interest-fieldset">
+            <legend class="form-label">Learning interests <span class="muted">(optional)</span></legend>
+            <div class="interest-grid">
+              <label class="interest-option"><input type="checkbox" name="learningInterests" value="stories"> <span>Stories</span></label>
+              <label class="interest-option"><input type="checkbox" name="learningInterests" value="culture"> <span>Culture</span></label>
+              <label class="interest-option"><input type="checkbox" name="learningInterests" value="history"> <span>History</span></label>
+              <label class="interest-option"><input type="checkbox" name="learningInterests" value="puzzles"> <span>Puzzles</span></label>
+              <label class="interest-option"><input type="checkbox" name="learningInterests" value="quizzes"> <span>Quizzes</span></label>
+              <label class="interest-option"><input type="checkbox" name="learningInterests" value="art"> <span>Art and drawing</span></label>
+            </div>
+          </fieldset>
+          <div class="cluster step-actions">
+            <button class="button button-quiet" type="button" data-profile-cancel>Cancel</button>
+            <button class="button button-primary" type="submit">Save changes</button>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <div data-component="footer"></div>
+  </body>
+</html>
