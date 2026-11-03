@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Get in touch with the MythoVerse team. Contact form submissions are not configured yet."
+    >
+    <title>Contact | MythoVerse</title>
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <script src="/assets/js/main.js" defer></script>
+    <script src="/assets/js/contact.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-component="header"></div>
+
+    <main id="main-content" class="page-main">
+      <section class="page-hero container-narrow" aria-labelledby="page-title">
+        <p class="eyebrow">We would like to hear from you</p>
+        <h1 id="page-title">Contact MythoVerse</h1>
+        <p class="page-lead">
+          Have a question or a thought about the MythoVerse vision? This page
+          is being prepared for future contact.
+        </p>
+      </section>
+
+      <section class="section section-inset" aria-labelledby="contact-title">
+        <div class="container contact-layout">
+          <aside class="contact-information card" aria-labelledby="contact-info-title">
+            <p class="eyebrow">Contact information</p>
+            <h2 id="contact-info-title">Stay connected</h2>
+            <p>
+              MythoVerse does not yet have a public contact email address or
+              phone number. We will share verified contact details here when
+              they are available.
+            </p>
+            <div class="contact-note">
+              <span class="badge">In development</span>
+              <p>
+                The contact form is not connected to a submission service, so
+                messages cannot be sent from this page yet.
+              </p>
+            </div>
+          </aside>
+
+          <section class="contact-form-panel card" aria-labelledby="contact-title">
+            <p class="eyebrow">Send a message</p>
+            <h2 id="contact-title">Contact form</h2>
+            <p class="form-hint" id="contact-form-hint">
+              Fields marked required must be completed. Submitting will not
+              send your message while the form is being set up.
+            </p>
+
+            <form id="contact-form" class="contact-form" novalidate aria-describedby="contact-form-hint">
+              <div class="form-field">
+                <label class="form-label" for="contact-name">Name <span aria-hidden="true">*</span></label>
+                <input
+                  class="form-control"
+                  id="contact-name"
+                  name="name"
+                  type="text"
+                  autocomplete="name"
+                  required
+                  minlength="2"
+                  maxlength="100"
+                  aria-describedby="contact-name-error"
+                >
+                <p class="form-error" id="contact-name-error" hidden></p>
+              </div>
+
+              <div class="form-field">
+                <label class="form-label" for="contact-email">Email <span aria-hidden="true">*</span></label>
+                <input
+                  class="form-control"
+                  id="contact-email"
+                  name="email"
+                  type="email"
+                  autocomplete="email"
+                  required
+                  maxlength="254"
+                  aria-describedby="contact-email-error"
+                >
+                <p class="form-error" id="contact-email-error" hidden></p>
+              </div>
+
+              <div class="form-field">
+                <label class="form-label" for="contact-subject">Subject <span aria-hidden="true">*</span></label>
+                <input
+                  class="form-control"
+                  id="contact-subject"
+                  name="subject"
+                  type="text"
+                  required
+                  minlength="3"
+                  maxlength="120"
+                  aria-describedby="contact-subject-error"
+                >
+                <p class="form-error" id="contact-subject-error" hidden></p>
+              </div>
+
+              <div class="form-field">
+                <label class="form-label" for="contact-message">Message <span aria-hidden="true">*</span></label>
+                <textarea
+                  class="form-control"
+                  id="contact-message"
+                  name="message"
+                  rows="6"
+                  required
+                  minlength="10"
+                  maxlength="2000"
+                  aria-describedby="contact-message-hint contact-message-error"
+                ></textarea>
+                <p class="form-hint" id="contact-message-hint">Share a little detail (10–2,000 characters).</p>
+                <p class="form-error" id="contact-message-error" hidden></p>
+              </div>
+
+              <p class="form-status" id="contact-form-status" role="status" aria-live="polite">
+                Messages cannot be sent yet because contact form submission is not configured.
+              </p>
+              <button class="button button-primary" type="submit">Review message</button>
+            </form>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <div data-component="footer"></div>
+  </body>
+</html>
