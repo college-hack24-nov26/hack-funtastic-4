@@ -1,0 +1,84 @@
+/* Mentor is an application workspace: a constrained viewport, navigation rail, and fixed composer. */
+.mentor-page {
+  width: 100%;
+  height: calc(100vh - 150px);
+  min-height: 650px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.mentor-page .mentor-intro {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  min-height: 76px;
+  padding: 0.85rem 1.1rem;
+  border: 1px solid rgba(230, 164, 67, 0.24);
+  border-radius: 0.3rem;
+  background: rgba(35, 21, 16, 0.86);
+}
+.mentor-page .mentor-intro-symbol { width: 2.6rem; height: 2.6rem; flex: 0 0 auto; font-size: 1.2rem; }
+.mentor-page .mentor-intro h2 { margin: 0.15rem 0; font-size: 1.15rem; }
+.mentor-page .mentor-intro p:last-child { margin: 0; color: var(--color-muted); font-size: 0.78rem; }
+.mentor-page .mentor-intro-status { margin-left: auto; }
+
+.mentor-page .mentor-workspace {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 265px minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.mentor-page .mentor-context-panel {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1rem;
+  border: 1px solid rgba(230, 164, 67, 0.2);
+  border-radius: 0.3rem;
+  background: #1c100c;
+}
+.mentor-page .mentor-context-heading h3 { margin: 0.25rem 0; font-size: 1rem; }
+.mentor-page .mentor-context-copy { margin: 0.6rem 0 1rem; font-size: 0.78rem; line-height: 1.5; }
+.mentor-page .mentor-suggestion-stack { display: grid; gap: 0.35rem; margin: 0; }
+.mentor-page .mentor-suggestion { padding: 0.7rem; border: 1px solid rgba(230, 164, 67, 0.14); border-radius: 0.2rem; font-size: 0.76rem; line-height: 1.35; }
+.mentor-page .mentor-history-block { margin-top: 1rem; padding-top: 1rem; }
+.mentor-page .mentor-history-heading h3 { font-size: 0.85rem; }
+.mentor-page .suggestion-list { max-height: 180px; overflow-y: auto; }
+
+.mentor-page .mentor-chat-card {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border: 1px solid rgba(230, 164, 67, 0.28);
+  border-radius: 0.3rem;
+  background: #120b09;
+}
+.mentor-page .mentor-chat-heading { display: flex; align-items: center; gap: 0.8rem; padding: 0.95rem 1.2rem; border-bottom: 1px solid rgba(230, 164, 67, 0.16); background: #21130f; }
+.mentor-page .mentor-avatar-large { width: 2.45rem; height: 2.45rem; font-size: 1.15rem; }
+.mentor-page .mentor-chat-heading h2 { margin: 0.15rem 0; font-size: 1.05rem; }
+.mentor-page .mentor-chat-heading span { color: var(--color-muted); font-size: 0.73rem; }
+.mentor-page .mentor-chat-log-wrap { min-height: 0; overflow-y: auto; padding: 1rem 1.2rem; }
+.mentor-page .mentor-chat-card .chat-log { min-height: 100%; display: flex; flex-direction: column; justify-content: flex-start; gap: 0.8rem; }
+.mentor-page .mentor-composer-wrap { padding: 0.8rem 1.2rem 0.85rem; border-top: 1px solid rgba(230, 164, 67, 0.18); background: #1c100c; }
+.mentor-page .mentor-composer-label { display: flex; justify-content: space-between; margin-bottom: 0.4rem; color: var(--color-muted); font-size: 0.68rem; }
+.mentor-page .mentor-composer { display: grid; grid-template-columns: minmax(0, 1fr) 110px 72px; gap: 0.45rem; }
+.mentor-page .mentor-composer input, .mentor-page .mentor-composer select { min-height: 2.35rem; }
+.mentor-page .mentor-composer .button { min-height: 2.35rem; padding: 0.5rem; }
+.mentor-page .mentor-composer-wrap #mentor-status { min-height: 1rem; margin: 0.35rem 0 0; font-size: 0.7rem; }
+
+@media (max-width: 800px) {
+  .mentor-page { height: auto; min-height: 0; }
+  .mentor-page .mentor-workspace { grid-template-columns: 1fr; }
+  .mentor-page .mentor-context-panel { max-height: none; }
+  .mentor-page .mentor-suggestion-stack { grid-template-columns: repeat(2, 1fr); }
+  .mentor-page .mentor-chat-card { min-height: 620px; }
+}
+
+@media (max-width: 520px) {
+  .mentor-page .mentor-intro { align-items: flex-start; flex-wrap: wrap; }
+  .mentor-page .mentor-intro-status { width: 100%; margin-left: 3.5rem; }
+  .mentor-page .mentor-suggestion-stack, .mentor-page .mentor-composer { grid-template-columns: 1fr; }
+  .mentor-page .mentor-composer .button { width: 100%; }
+}

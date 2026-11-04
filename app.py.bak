@@ -1,0 +1,1469 @@
+import json
+import logging
+import math
+import os
+import sqlite3
+from contextlib import contextmanager
+from pathlib import Path
+
+from dotenv import dotenv_values, load_dotenv
+from flask import Flask, jsonify, redirect, render_template, request
+from google import genai
+from google.genai import types
+from google.genai.errors import APIError
+
+BASE_DIR = Path(__file__).resolve().parent
+DB_PATH = BASE_DIR / 'mythoverse.db'
+logger = logging.getLogger(__name__)
+
+
+def load_environment(env_path=None):
+    dotenv_path = env_path or BASE_DIR / '.env'
+    values = dotenv_values(dotenv_path)
+    load_dotenv(dotenv_path=dotenv_path, override=False)
+    for name in ('GEMINI_API_KEY', 'GEMINI_MODEL'):
+        if values.get(name):
+            os.environ[name] = values[name]
+
+
+load_environment()
+
+app = Flask(__name__, static_folder='static', template_folder='templates')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'mythoverse-dev-secret')
+app.config['DATABASE'] = os.environ.get('DATABASE_PATH', str(DB_PATH))
+
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-3.5-flash-lite')
+
+AGE_GROUPS = {
+    '6-8': 'simple and story-led',
+    '9-12': 'clear and practical',
+    '13-15': 'thoughtful and reflective',
+    '16-18': 'philosophical and analytical',
+    '18+': 'deep and nuanced',
+}
+
+JUDGE_CRITERIA = ('relevance', 'reasoning', 'evidence', 'clarity', 'rebuttal', 'respect')
+JUDGE_RESPONSE_SCHEMA = types.Schema(
+    type='OBJECT',
+    properties={
+        'scorecards': types.Schema(
+            type='ARRAY',
+            items=types.Schema(
+                type='OBJECT',
+                properties={
+                    'participant_key': types.Schema(type='STRING', enum=['A', 'B']),
+                    **{criterion: types.Schema(type='NUMBER') for criterion in JUDGE_CRITERIA},
+                    'explanation': types.Schema(type='STRING'),
+                    'strengths': types.Schema(type='ARRAY', items=types.Schema(type='STRING')),
+                    'improvements': types.Schema(type='ARRAY', items=types.Schema(type='STRING')),
+                },
+                required=['participant_key', *JUDGE_CRITERIA, 'explanation', 'strengths', 'improvements'],
+            ),
+        ),
+        'summary': types.Schema(type='STRING'),
+    },
+    required=['scorecards', 'summary'],
+)
+
+SQL_SCHEMA = """
+CREATE TABLE IF NOT EXISTS content_catalog (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL,
+    description TEXT,
+    url TEXT,
+    language TEXT DEFAULT 'en',
+    UNIQUE(title, category)
+);
+
+CREATE TABLE IF NOT EXISTS ai_conversations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id TEXT NOT NULL,
+    title TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ai_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    conversation_id INTEGER NOT NULL,
+    sender TEXT NOT NULL,
+    text TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    metadata TEXT DEFAULT '{}',
+    FOREIGN KEY(conversation_id) REFERENCES ai_conversations(id)
+);
+
+CREATE TABLE IF NOT EXISTS learning_records (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id TEXT NOT NULL,
+    topic TEXT NOT NULL,
+    focus_area TEXT,
+    score REAL,
+    status TEXT,
+    activity_type TEXT,
+    chapter_name TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS debates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    topic TEXT NOT NULL,
+    mode TEXT NOT NULL,
+    created_by TEXT NOT NULL,
+    age_group TEXT,
+    status TEXT DEFAULT 'open',
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    winner TEXT,
+    current_round INTEGER NOT NULL DEFAULT 1,
+    final_feedback TEXT,
+    completed_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS debate_participants (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    debate_id INTEGER NOT NULL,
+    student_id TEXT NOT NULL,
+    role TEXT NOT NULL,
+    position TEXT,
+    ready INTEGER NOT NULL DEFAULT 0,
+    joined_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS debate_arguments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    debate_id INTEGER NOT NULL,
+    speaker TEXT NOT NULL,
+    argument TEXT NOT NULL,
+    round_number INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS debate_scores (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    debate_id INTEGER NOT NULL,
+    student_id TEXT NOT NULL,
+    relevance REAL,
+    reasoning REAL,
+    clarity REAL,
+    evidence REAL,
+    respect REAL,
+    total REAL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS debate_rounds (
+    debate_id INTEGER NOT NULL REFERENCES debates(id) ON DELETE CASCADE,
+    round_number INTEGER NOT NULL CHECK (round_number BETWEEN 1 AND 3),
+    status TEXT NOT NULL DEFAULT 'not_started'
+        CHECK (status IN ('waiting_ready', 'active', 'awaiting_opponent', 'awaiting_judge', 'judging', 'generating_ai', 'completed', 'not_started')),
+    started_at TEXT,
+    completed_at TEXT,
+    judge_summary TEXT,
+    PRIMARY KEY (debate_id, round_number)
+);
+
+CREATE TABLE IF NOT EXISTS debate_round_submissions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    debate_id INTEGER NOT NULL REFERENCES debates(id) ON DELETE CASCADE,
+    round_number INTEGER NOT NULL CHECK (round_number BETWEEN 1 AND 3),
+    participant_id INTEGER NOT NULL REFERENCES debate_participants(id),
+    argument TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (debate_id, round_number, participant_id),
+    FOREIGN KEY (debate_id, round_number) REFERENCES debate_rounds(debate_id, round_number)
+);
+
+CREATE TABLE IF NOT EXISTS debate_round_scores (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    debate_id INTEGER NOT NULL REFERENCES debates(id) ON DELETE CASCADE,
+    round_number INTEGER NOT NULL CHECK (round_number BETWEEN 1 AND 3),
+    participant_id INTEGER NOT NULL REFERENCES debate_participants(id),
+    relevance REAL NOT NULL CHECK (relevance BETWEEN 0 AND 10),
+    reasoning REAL NOT NULL CHECK (reasoning BETWEEN 0 AND 10),
+    evidence REAL NOT NULL CHECK (evidence BETWEEN 0 AND 10),
+    clarity REAL NOT NULL CHECK (clarity BETWEEN 0 AND 10),
+    rebuttal REAL NOT NULL CHECK (rebuttal BETWEEN 0 AND 10),
+    respect REAL NOT NULL CHECK (respect BETWEEN 0 AND 10),
+    total REAL NOT NULL CHECK (total BETWEEN 0 AND 10),
+    explanation TEXT NOT NULL,
+    strengths TEXT NOT NULL DEFAULT '[]',
+    improvements TEXT NOT NULL DEFAULT '[]',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (debate_id, round_number, participant_id),
+    FOREIGN KEY (debate_id, round_number) REFERENCES debate_rounds(debate_id, round_number)
+);
+
+CREATE TABLE IF NOT EXISTS dharma_reward_outbox (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    debate_id INTEGER NOT NULL UNIQUE REFERENCES debates(id),
+    student_id TEXT NOT NULL,
+    points INTEGER NOT NULL DEFAULT 5 CHECK (points = 5),
+    status TEXT NOT NULL DEFAULT 'pending_integration'
+        CHECK (status IN ('pending_integration', 'credited')),
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    credited_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_round_submissions_debate_round
+    ON debate_round_submissions(debate_id, round_number);
+
+CREATE INDEX IF NOT EXISTS idx_round_scores_debate_round
+    ON debate_round_scores(debate_id, round_number);
+
+CREATE TRIGGER IF NOT EXISTS validate_debate_participant_parent
+BEFORE INSERT ON debate_participants
+WHEN NOT EXISTS (SELECT 1 FROM debates WHERE id = NEW.debate_id)
+BEGIN
+    SELECT RAISE(ABORT, 'debate does not exist');
+END;
+
+CREATE TRIGGER IF NOT EXISTS validate_debate_argument_parent
+BEFORE INSERT ON debate_arguments
+WHEN NOT EXISTS (SELECT 1 FROM debates WHERE id = NEW.debate_id)
+BEGIN
+    SELECT RAISE(ABORT, 'debate does not exist');
+END;
+
+CREATE TRIGGER IF NOT EXISTS validate_debate_score_participant
+BEFORE INSERT ON debate_scores
+WHEN NOT EXISTS (
+    SELECT 1 FROM debate_participants
+    WHERE debate_id = NEW.debate_id AND student_id = NEW.student_id
+)
+BEGIN
+    SELECT RAISE(ABORT, 'debate participant does not exist');
+END;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_debate_participant_identity
+ON debate_participants(debate_id, student_id);
+"""
+
+
+@contextmanager
+def get_db_connection():
+    connection = sqlite3.connect(app.config.get('DATABASE', DB_PATH))
+    connection.row_factory = sqlite3.Row
+    connection.execute('PRAGMA foreign_keys = ON')
+    try:
+        yield connection
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def init_db():
+    with get_db_connection() as connection:
+        connection.executescript(SQL_SCHEMA)
+        migrate_debate_schema(connection)
+        seed_content_catalog(connection)
+        seed_debate_rounds(connection)
+        connection.commit()
+
+
+def migrate_debate_schema(connection):
+    columns = {
+        'debates': {
+            'current_round': 'INTEGER NOT NULL DEFAULT 1',
+            'final_feedback': 'TEXT',
+            'completed_at': 'TEXT',
+        },
+        'debate_participants': {
+            'ready': 'INTEGER NOT NULL DEFAULT 0',
+        },
+    }
+    for table, additions in columns.items():
+        existing = {row['name'] for row in connection.execute(f'PRAGMA table_info({table})')}
+        for column, definition in additions.items():
+            if column not in existing:
+                connection.execute(f'ALTER TABLE {table} ADD COLUMN {column} {definition}')
+
+
+def seed_debate_rounds(connection):
+    debates = connection.execute('SELECT id, status FROM debates').fetchall()
+    for debate in debates:
+        for round_number in range(1, 4):
+            if round_number == 1:
+                status = 'active' if debate['status'] == 'in_progress' else 'waiting_ready'
+            else:
+                status = 'not_started'
+            connection.execute(
+                'INSERT OR IGNORE INTO debate_rounds (debate_id, round_number, status) VALUES (?, ?, ?)',
+                (debate['id'], round_number, status),
+            )
+        if debate['status'] == 'in_progress':
+            connection.execute(
+                'UPDATE debate_participants SET ready = 1 WHERE debate_id = ?',
+                (debate['id'],),
+            )
+
+
+def seed_content_catalog(connection):
+    rows = [
+        ('Ramayana', 'stories', 'The epic journey of Rama, Sita, Lakshmana, and Hanuman.', '/stories/ramayana'),
+        ('Mahabharata', 'stories', 'The great epic of the Kurukshetra war and the Pandavas and Kauravas.', '/stories/mahabharata'),
+        ('Bhagavad Gita', 'philosophy', 'A foundational teaching on duty, wisdom, and action.', '/learning/gita'),
+        ('Lord Krishna', 'characters', 'A guide, teacher, warrior, and embodiment of wisdom.', '/characters/krishna'),
+        ('Lord Rama', 'characters', 'The righteous king, protector, and ideal of dharma.', '/characters/rama'),
+        ('Hanuman', 'characters', 'Devotion, courage, and service in action.', '/characters/hanuman'),
+        ('Dharma and Karma', 'concepts', 'How actions, duty, and moral choices shape life and learning.', '/concepts/dharma-karma'),
+        ('Sanskrit word of the day', 'language', 'A daily Sanskrit term with meaning and context.', '/language/sanskrit'),
+        ('Ancient Indian astronomy', 'science', 'Observing, measuring, and understanding the sky in traditional knowledge systems.', '/science/astronomy'),
+        ('Ancient Indian mathematics', 'science', 'The brilliance of zero, geometry, and numerical systems.', '/science/mathematics'),
+        ('The Four Purusharthas', 'philosophy', 'Dharma, artha, kama, and moksha as life goals.', '/concepts/purusharthas'),
+        ('Ganesha', 'characters', 'The remover of obstacles and a symbol of wisdom and beginnings.', '/characters/ganesha'),
+    ]
+    existing = connection.execute('SELECT title, category FROM content_catalog').fetchall()
+    existing_keys = {(row['title'], row['category']) for row in existing}
+    for title, category, description, url in rows:
+        if (title, category) not in existing_keys:
+            connection.execute(
+                'INSERT INTO content_catalog (title, category, description, url) VALUES (?, ?, ?, ?)',
+                (title, category, description, url),
+            )
+
+
+def safe_age_group(value):
+    if value in AGE_GROUPS:
+        return value
+    return '13-15'
+
+
+class AIProviderError(RuntimeError):
+    def __init__(self, message, status_code=502, category='provider_error'):
+        super().__init__(message)
+        self.status_code = status_code
+        self.category = category
+
+
+def summarize_history(conversation_id):
+    with get_db_connection() as connection:
+        rows = connection.execute(
+            'SELECT sender, text, created_at, metadata FROM ai_messages WHERE conversation_id = ? ORDER BY id ASC',
+            (conversation_id,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+
+def build_provider_history(rows):
+    history = []
+    pending_student_message = None
+    for row in rows:
+        if row['sender'] == 'student':
+            pending_student_message = {'sender': 'student', 'text': row['text']}
+            continue
+        if row['sender'] != 'guru' or not pending_student_message:
+            continue
+        try:
+            metadata = json.loads(row['metadata'] or '{}')
+        except (json.JSONDecodeError, TypeError):
+            metadata = {}
+        if metadata.get('provider') in ('gemini', 'openai'):
+            history.extend((pending_student_message, {'sender': 'guru', 'text': row['text']}))
+        pending_student_message = None
+    return history
+
+
+def get_gemini_client():
+    api_key = os.environ.get('GEMINI_API_KEY') or GEMINI_API_KEY
+    if not api_key:
+        raise AIProviderError('AI is not configured. Set GEMINI_API_KEY to enable Gemini.', 503)
+
+    cached = app.extensions.get('gemini_client')
+    if cached and cached[0] == api_key:
+        return cached[1]
+    try:
+        client = genai.Client(
+            api_key=api_key,
+            http_options=types.HttpOptions(
+                api_version='v1beta',
+                timeout=30_000,
+                retry_options=types.HttpRetryOptions(attempts=1),
+            ),
+        )
+    except Exception as error:
+        log_gemini_failure(error, 'client_initialization')
+        raise AIProviderError('Gemini could not initialize. Check the server configuration.') from error
+    app.extensions['gemini_client'] = (api_key, client)
+    return client
+
+
+def log_gemini_failure(error, category, provider_status=None):
+    detail = str(getattr(error, 'message', error))
+    api_key = os.environ.get('GEMINI_API_KEY') or GEMINI_API_KEY
+    if api_key:
+        detail = detail.replace(api_key, '[redacted]')
+    logger.warning(
+        'Gemini failure category=%s exception=%s provider_status=%s detail=%s',
+        category,
+        type(error).__name__,
+        provider_status if provider_status is not None else getattr(error, 'code', None),
+        detail[:1000],
+    )
+
+
+def gemini_api_error(error, model=None):
+    model = model or GEMINI_MODEL
+    raw_code = getattr(error, 'code', None)
+    try:
+        code = int(raw_code)
+    except (TypeError, ValueError):
+        code = None
+    detail = str(getattr(error, 'message', error)).lower()
+    if code == 404 or any(term in detail for term in ('model not found', 'not supported for generatecontent')):
+        category = 'unsupported_model'
+        message = f'Gemini model "{model}" is unavailable for content generation with this API key. Check GEMINI_MODEL.'
+    elif code == 401 or any(term in detail for term in ('api key not valid', 'invalid api key', 'api_key_invalid')):
+        category = 'invalid_api_key'
+        message = 'Gemini rejected GEMINI_API_KEY. Verify the key in the server .env file.'
+    elif code == 403:
+        category = 'permission_denied'
+        message = 'Gemini denied access. Check this keyâ€™s API permissions, project, and model access.'
+    elif code == 400 and 'developer instruction is not enabled' in detail:
+        category = 'unsupported_api_feature'
+        message = 'The Gemini API version does not support system instructions. Use the supported v1beta endpoint.'
+    elif code == 429 or any(term in detail for term in ('quota', 'resource_exhausted', 'rate limit')):
+        category = 'quota_or_rate_limit'
+        message = 'Gemini quota or rate limit reached. Check the Google AI project quota and try again later.'
+    elif code == 504 or any(term in detail for term in ('deadline_exceeded', 'deadline expired', 'timed out')):
+        category = 'provider_deadline'
+        message = 'Gemini did not finish before Googleâ€™s request deadline. Please retry shortly.'
+    elif code is not None and code >= 500:
+        category = 'google_server_error'
+        message = f'Google Gemini returned a server error (HTTP {code}). Please retry shortly.'
+    else:
+        category = 'provider_request_error'
+        message = f'Gemini rejected the request (HTTP {code or "unknown"}). Check model and API configuration.'
+    status_code = 429 if category == 'quota_or_rate_limit' else 504 if category == 'provider_deadline' else code if code in range(500, 600) else 502
+    return AIProviderError(message, status_code, category)
+
+
+def generate_gemini_content(contents, system_instruction, max_output_tokens=900, temperature=0.5, response_schema=None):
+    model = (os.environ.get('GEMINI_MODEL') or GEMINI_MODEL or 'gemini-3.5-flash-lite').strip()
+    config = types.GenerateContentConfig(
+        system_instruction=system_instruction,
+        temperature=temperature,
+        max_output_tokens=max_output_tokens,
+        response_mime_type='application/json' if response_schema else None,
+        response_schema=response_schema,
+    )
+    try:
+        response = get_gemini_client().models.generate_content(
+            model=model,
+            contents=contents,
+            config=config,
+        )
+    except AIProviderError:
+        raise
+    except APIError as error:
+        provider_error = gemini_api_error(error, model)
+        log_gemini_failure(error, provider_error.category)
+        raise provider_error from error
+    except Exception as error:
+        error_name = type(error).__name__.lower()
+        if any(term in error_name for term in ('timeout', 'connect', 'network')):
+            provider_error = AIProviderError(
+                'Could not reach Gemini before the request timed out. Check network connectivity and retry.',
+                504,
+                'network_timeout',
+            )
+        else:
+            provider_error = AIProviderError(
+                'Gemini returned an unexpected response. Check server logs for the redacted diagnostic.',
+                502,
+                'unexpected_provider_error',
+            )
+        log_gemini_failure(error, provider_error.category)
+        raise provider_error from error
+
+    prompt_feedback = getattr(response, 'prompt_feedback', None)
+    prompt_block_reason = getattr(prompt_feedback, 'block_reason', None)
+    prompt_block_name = getattr(prompt_block_reason, 'name', None)
+    if isinstance(prompt_block_name, str) and prompt_block_name != 'BLOCKED_REASON_UNSPECIFIED':
+        raise AIProviderError('Gemini safety filters blocked this question. Try rephrasing it.', 422, 'prompt_blocked')
+
+    candidates = getattr(response, 'candidates', None) or []
+    finish_reasons = [
+        getattr(getattr(candidate, 'finish_reason', None), 'name', str(getattr(candidate, 'finish_reason', '')))
+        for candidate in candidates
+    ]
+    if any(reason in {'SAFETY', 'BLOCKLIST', 'PROHIBITED_CONTENT', 'SPII'} for reason in finish_reasons):
+        raise AIProviderError('Gemini safety filters blocked the response. Try a different question.', 422, 'response_blocked')
+
+    try:
+        content = response.text
+    except Exception as error:
+        log_gemini_failure(error, 'response_extraction')
+        raise AIProviderError('Gemini returned an unreadable response. Please try again.', 502, 'response_extraction') from error
+
+    if not isinstance(content, str) or not content.strip():
+        logger.warning('Gemini returned an empty text response model=%s finish_reasons=%s', model, finish_reasons)
+        raise AIProviderError('Gemini returned no text for this request. Try rephrasing the question.', 502, 'empty_response')
+    return content.strip(), model
+
+
+def generate_gemini_response(question, age_group, history=None):
+    system_prompt = (
+        'You are MythoVerse AI Guru, a mythology educator focused on Indian epics, philosophy, gods, traditions, and values. '
+        'Support questions about the Ramayana, Mahabharata, Bhagavad Gita, Indian philosophy, dharma, karma, traditions, Sanskrit, and ancient knowledge. '
+        'Respond in the language the student used unless they request another language. Explain at the requested age level, never invent scripture quotations or put paraphrases in quotation marks, distinguish regional variations and interpretations, and clearly separate traditional narratives, historical evidence, and modern scientific knowledge.'
+    )
+    contents = [
+        {
+            'role': 'model' if row['sender'] == 'guru' else 'user',
+            'parts': [{'text': row['text']}],
+        }
+        for row in (history or [])
+    ]
+    contents.append({
+        'role': 'user',
+        'parts': [{
+            'text': f"Answer in a {AGE_GROUPS[safe_age_group(age_group)]} style for a student. Keep it educational, respectful, and concise. Question: {question}"
+        }],
+    })
+    answer, model = generate_gemini_content(contents, system_prompt, max_output_tokens=900)
+    return {
+        'answer': answer,
+        'provider': 'gemini',
+        'model': model,
+        'age_group': safe_age_group(age_group),
+    }
+
+
+def generate_gemini_structured_response(prompt, system_instruction, response_schema, age_group):
+    age_guidance = AGE_GROUPS[safe_age_group(age_group)]
+    contents = [types.Content(
+        role='user',
+        parts=[types.Part.from_text(text=f'Use language suitable for a {age_guidance} student.\n{prompt}')],
+    )]
+    text, _ = generate_gemini_content(
+        contents,
+        system_instruction,
+        max_output_tokens=1800,
+        temperature=0,
+        response_schema=response_schema,
+    )
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as error:
+        logger.warning('Gemini structured response was invalid JSON model=%s', GEMINI_MODEL)
+        raise AIProviderError('Gemini returned an invalid judge scorecard. No scores were saved.', 502, 'invalid_structured_response') from error
+
+
+def generate_debate_opponent_argument(debate, position, round_number, student_argument, history):
+    round_focus = {
+        1: 'Opening: state the AI position and its strongest reasons.',
+        2: 'Rebuttal: answer the student\'s previous-round point and add a counterargument.',
+        3: 'Final: present the strongest concise closing argument and summarize the case.',
+    }[round_number]
+    prompt = (
+        f"Debate topic: {debate['topic']}\n"
+        f"Your assigned position: {position}\n"
+        f"Round {round_number} of 3. {round_focus}\n"
+        f"The student's current argument: {student_argument}\n"
+        'Respond directly to the student, remain respectful, and do not repeat earlier AI arguments. '
+        'Return only the argument text, with no role label or scoring.'
+    )
+    response = build_guru_response(prompt, debate['age_group'], history)
+    return response['answer']
+
+
+def _evaluate_pending_debate_round(debate_id, round_number, requester_id):
+    with get_db_connection() as connection:
+        debate = connection.execute('SELECT * FROM debates WHERE id = ?', (debate_id,)).fetchone()
+        if not debate:
+            return jsonify({'error': 'Debate not found.'}), 404
+        requester = connection.execute(
+            "SELECT id FROM debate_participants WHERE debate_id = ? AND student_id = ? AND role = 'student'",
+            (debate_id, requester_id),
+        ).fetchone()
+        if not requester:
+            return jsonify({'error': 'Only a debate participant can request evaluation.'}), 403
+        if debate['status'] == 'completed' or round_number != debate['current_round']:
+            return jsonify({'error': 'Only the current, incomplete round can be evaluated.'}), 409
+        round_row = connection.execute(
+            'SELECT status FROM debate_rounds WHERE debate_id = ? AND round_number = ?',
+            (debate_id, round_number),
+        ).fetchone()
+        if not round_row or round_row['status'] != 'awaiting_judge':
+            return jsonify({'error': 'Both participants must submit before the Judge can evaluate this round.'}), 409
+        participants = connection.execute(
+            "SELECT * FROM debate_participants WHERE debate_id = ? AND role IN ('student','ai') ORDER BY CASE role WHEN 'student' THEN 0 ELSE 1 END, id",
+            (debate_id,),
+        ).fetchall()
+        submissions = connection.execute(
+            """
+            SELECT s.participant_id, s.argument, p.student_id, p.position, p.role
+            FROM debate_round_submissions AS s JOIN debate_participants AS p ON p.id = s.participant_id
+            WHERE s.debate_id = ? AND s.round_number = ?
+            ORDER BY CASE p.role WHEN 'student' THEN 0 ELSE 1 END, p.id
+            """,
+            (debate_id, round_number),
+        ).fetchall()
+        if len(participants) != 2 or len(submissions) != 2:
+            return jsonify({'error': 'Exactly two participant submissions are required for evaluation.'}), 409
+        cursor = connection.execute(
+            "UPDATE debate_rounds SET status = 'judging' WHERE debate_id = ? AND round_number = ? AND status = 'awaiting_judge'",
+            (debate_id, round_number),
+        )
+        if cursor.rowcount != 1:
+            return jsonify({'error': 'This round is already being evaluated.'}), 409
+        previous = connection.execute(
+            """
+            SELECT s.round_number, p.student_id, p.role, s.argument
+            FROM debate_round_submissions AS s JOIN debate_participants AS p ON p.id = s.participant_id
+            WHERE s.debate_id = ? AND s.round_number < ? ORDER BY s.round_number, p.id
+            """,
+            (debate_id, round_number),
+        ).fetchall()
+        prior_arguments = [
+            {'round': row['round_number'], 'speaker': 'Gemini AI Opponent' if row['role'] == 'ai' else row['student_id'], 'argument': row['argument']}
+            for row in previous
+        ]
+        judge_arguments = [
+            {'participant_key': key, 'position': row['position'], 'argument': row['argument']}
+            for key, row in zip(('A', 'B'), submissions)
+        ]
+
+    try:
+        judgement = judge_debate_round(debate['topic'], round_number, judge_arguments, prior_arguments, debate['age_group'])
+    except AIProviderError as error:
+        with get_db_connection() as connection:
+            connection.execute(
+                "UPDATE debate_rounds SET status = 'awaiting_judge' WHERE debate_id = ? AND round_number = ? AND status = 'judging'",
+                (debate_id, round_number),
+            )
+        return jsonify({
+            'error': str(error),
+            'category': error.category,
+            'round_number': round_number,
+            'round_status': 'awaiting_judge',
+            'submissions_saved': True,
+            'retry_endpoint': f'/api/debate/{debate_id}/rounds/{round_number}/evaluate',
+        }), error.status_code
+
+    with get_db_connection() as connection:
+        current_debate = connection.execute('SELECT * FROM debates WHERE id = ?', (debate_id,)).fetchone()
+        current_round = connection.execute(
+            'SELECT status FROM debate_rounds WHERE debate_id = ? AND round_number = ?',
+            (debate_id, round_number),
+        ).fetchone()
+        if not current_round or current_round['status'] != 'judging':
+            return jsonify({'error': 'Round state changed while evaluation was running.'}), 409
+        result = _persist_judged_round(connection, current_debate, round_number, participants, judgement)
+    return jsonify(result), 200
+
+
+def _validate_feedback_list(value, field_name):
+    if not isinstance(value, list) or len(value) > 5:
+        raise AIProviderError(f'Gemini Judge returned invalid {field_name}. No scores were saved.', 502, 'invalid_judge_scorecard')
+    if any(not isinstance(item, str) or not item.strip() or len(item) > 240 for item in value):
+        raise AIProviderError(f'Gemini Judge returned invalid {field_name}. No scores were saved.', 502, 'invalid_judge_scorecard')
+    return [item.strip() for item in value]
+
+
+def _persist_judged_round(connection, debate, round_number, participants, judgement):
+    for participant_key, participant in zip(('A', 'B'), participants):
+        score = judgement[participant_key]
+        connection.execute(
+            """
+            INSERT INTO debate_round_scores (
+                debate_id, round_number, participant_id, relevance, reasoning, evidence,
+                clarity, rebuttal, respect, total, explanation, strengths, improvements
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                debate['id'], round_number, participant['id'], score['relevance'], score['reasoning'],
+                score['evidence'], score['clarity'], score['rebuttal'], score['respect'], score['total'],
+                score['explanation'], json.dumps(score['strengths']), json.dumps(score['improvements']),
+            ),
+        )
+    connection.execute(
+        "UPDATE debate_rounds SET status = 'completed', judge_summary = ?, completed_at = CURRENT_TIMESTAMP WHERE debate_id = ? AND round_number = ?",
+        (judgement['summary'], debate['id'], round_number),
+    )
+    result = {
+        'round_number': round_number,
+        'round_status': 'completed',
+        'judge_summary': judgement['summary'],
+        'scores': [
+            {'participant_id': participant['student_id'], 'role': participant['role'], **judgement[key]}
+            for key, participant in zip(('A', 'B'), participants)
+        ],
+    }
+    if round_number < 3:
+        next_round = round_number + 1
+        connection.execute(
+            "UPDATE debate_rounds SET status = 'active', started_at = CURRENT_TIMESTAMP WHERE debate_id = ? AND round_number = ?",
+            (debate['id'], next_round),
+        )
+        connection.execute("UPDATE debates SET current_round = ?, status = 'in_progress' WHERE id = ?", (next_round, debate['id']))
+        result.update({'status': 'in_progress', 'current_round': next_round})
+        return result
+
+    totals = connection.execute(
+        'SELECT participant_id, ROUND(SUM(total), 1) AS total_score FROM debate_round_scores WHERE debate_id = ? GROUP BY participant_id',
+        (debate['id'],),
+    ).fetchall()
+    total_by_participant = {row['participant_id']: row['total_score'] for row in totals}
+    first_total = total_by_participant.get(participants[0]['id'], 0)
+    second_total = total_by_participant.get(participants[1]['id'], 0)
+    reward = None
+    if round(first_total, 1) == round(second_total, 1):
+        winner = 'draw'
+    else:
+        winning_participant = participants[0] if first_total > second_total else participants[1]
+        winner = winning_participant['student_id']
+        if winning_participant['role'] == 'student':
+            connection.execute(
+                "INSERT OR IGNORE INTO dharma_reward_outbox (debate_id, student_id, points, status) VALUES (?, ?, 5, 'pending_integration')",
+                (debate['id'], winning_participant['student_id']),
+            )
+            reward_row = connection.execute(
+                'SELECT points, status, created_at FROM dharma_reward_outbox WHERE debate_id = ?',
+                (debate['id'],),
+            ).fetchone()
+            reward = dict(reward_row) if reward_row else None
+    summaries = connection.execute(
+        'SELECT judge_summary FROM debate_rounds WHERE debate_id = ? ORDER BY round_number',
+        (debate['id'],),
+    ).fetchall()
+    final_feedback = '\n\n'.join(row['judge_summary'] for row in summaries if row['judge_summary'])
+    connection.execute(
+        "UPDATE debates SET status = 'completed', current_round = 3, winner = ?, final_feedback = ?, completed_at = CURRENT_TIMESTAMP WHERE id = ?",
+        (winner, final_feedback, debate['id']),
+    )
+    scorecard_rows = connection.execute(
+        """
+        SELECT s.round_number, p.student_id AS participant_id, p.role, p.position,
+               s.relevance, s.reasoning, s.evidence, s.clarity, s.rebuttal, s.respect,
+               s.total, s.explanation, s.strengths, s.improvements
+        FROM debate_round_scores AS s JOIN debate_participants AS p ON p.id = s.participant_id
+        WHERE s.debate_id = ? ORDER BY s.round_number, p.id
+        """,
+        (debate['id'],),
+    ).fetchall()
+    scorecard = []
+    for row in scorecard_rows:
+        item = dict(row)
+        item['strengths'] = json.loads(item['strengths'])
+        item['improvements'] = json.loads(item['improvements'])
+        scorecard.append(item)
+    result.update({
+        'status': 'completed',
+        'winner': winner,
+        'total_scores': [
+            {'participant_id': participant['student_id'], 'role': participant['role'],
+             'score': total_by_participant.get(participant['id'], 0)}
+            for participant in participants
+        ],
+        'scorecard': scorecard,
+        'final_feedback': final_feedback,
+        'reward': reward,
+        'integration_notice': 'Dharma Points service is not connected; the 5-point reward is queued in the integration outbox.' if reward else None,
+    })
+    return result
+
+
+def judge_debate_round(topic, round_number, participant_arguments, prior_arguments, age_group):
+    if len(participant_arguments) != 2:
+        raise AIProviderError('A Judge requires exactly two submitted arguments.', 409, 'round_not_ready')
+    system_instruction = (
+        'You are the independent MythoVerse AI Debate Judge. You are not a debater. Evaluate exactly two submitted arguments using the same six criteria: '
+        'relevance to topic, logical reasoning, evidence/examples, clarity, rebuttal strength, and respectful communication. '
+        'For Round 1, score rebuttal as anticipation of likely counterarguments. Give each criterion an integer score from 0 to 10. '
+        'Use the provided participant keys A and B exactly once. Explain evidence-based feedback, do not invent facts or citations, and return only the required JSON.'
+    )
+    prompt_data = {
+        'topic': topic,
+        'round': round_number,
+        'round_focus': {
+            1: 'opening arguments',
+            2: 'rebuttals to the previous round',
+            3: 'final arguments',
+        }[round_number],
+        'previous_round_arguments': prior_arguments,
+        'current_arguments': [
+            {'participant_key': 'A', 'position': participant_arguments[0]['position'], 'argument': participant_arguments[0]['argument']},
+            {'participant_key': 'B', 'position': participant_arguments[1]['position'], 'argument': participant_arguments[1]['argument']},
+        ],
+    }
+    generated = generate_gemini_structured_response(
+        json.dumps(prompt_data, ensure_ascii=False),
+        system_instruction,
+        JUDGE_RESPONSE_SCHEMA,
+        age_group,
+    )
+    if not isinstance(generated, dict) or not isinstance(generated.get('scorecards'), list):
+        raise AIProviderError('Gemini Judge returned a malformed scorecard. No scores were saved.', 502, 'invalid_judge_scorecard')
+    cards = generated['scorecards']
+    if len(cards) != 2 or {card.get('participant_key') for card in cards if isinstance(card, dict)} != {'A', 'B'}:
+        raise AIProviderError('Gemini Judge did not score both participants exactly once. No scores were saved.', 502, 'invalid_judge_scorecard')
+
+    validated = {}
+    for card in cards:
+        scores = {}
+        for criterion in JUDGE_CRITERIA:
+            value = card.get(criterion)
+            if type(value) not in (int, float) or not math.isfinite(value) or not 0 <= value <= 10:
+                raise AIProviderError(f'Gemini Judge returned an invalid {criterion} score. No scores were saved.', 502, 'invalid_judge_scorecard')
+            scores[criterion] = round(float(value), 1)
+        explanation = card.get('explanation')
+        if not isinstance(explanation, str) or not explanation.strip() or len(explanation) > 1200:
+            raise AIProviderError('Gemini Judge returned invalid score feedback. No scores were saved.', 502, 'invalid_judge_scorecard')
+        validated[card['participant_key']] = {
+            **scores,
+            'total': round(sum(scores.values()) / len(JUDGE_CRITERIA), 1),
+            'explanation': explanation.strip(),
+            'strengths': _validate_feedback_list(card.get('strengths'), 'strengths'),
+            'improvements': _validate_feedback_list(card.get('improvements'), 'improvements'),
+        }
+    summary = generated.get('summary')
+    if not isinstance(summary, str) or not summary.strip() or len(summary) > 2000:
+        raise AIProviderError('Gemini Judge returned invalid round feedback. No scores were saved.', 502, 'invalid_judge_scorecard')
+    return {'A': validated['A'], 'B': validated['B'], 'summary': summary.strip()}
+
+
+def build_guru_response(question, age_group, history=None):
+    return generate_gemini_response(question, age_group, history)
+
+
+@app.route('/')
+def index():
+    return redirect('/ai-mentor', code=302)
+
+
+@app.route('/ai-mentor')
+def ai_mentor():
+    return render_template('mentor.html')
+
+
+@app.route('/learning-intelligence')
+def learning_intelligence():
+    return render_template('learning.html')
+
+
+@app.route('/debate-room')
+def debate_room():
+    return render_template('debate.html')
+
+
+@app.get('/api/search')
+def api_search():
+    query = (request.args.get('q') or '').strip()
+    if not query:
+        return jsonify({'results': [], 'query': query, 'error': 'Please enter a topic to search.'})
+    with get_db_connection() as connection:
+        rows = connection.execute(
+            """
+            SELECT id, title, category, description, url
+            FROM content_catalog
+            WHERE title LIKE ? OR category LIKE ? OR description LIKE ?
+            ORDER BY title ASC
+            LIMIT 8
+            """,
+            (f'%{query}%', f'%{query}%', f'%{query}%'),
+        ).fetchall()
+    results = [dict(row) for row in rows]
+    return jsonify({'query': query, 'results': results})
+
+
+@app.get('/api/mentor/conversations')
+def api_conversations():
+    student_id = request.args.get('student_id', 'demo-student')
+    with get_db_connection() as connection:
+        conversations = connection.execute(
+            'SELECT id, title, created_at FROM ai_conversations WHERE student_id = ? ORDER BY created_at DESC',
+            (student_id,),
+        ).fetchall()
+        records = []
+        for conversation in conversations:
+            messages = summarize_history(conversation['id'])
+            records.append({
+                'id': conversation['id'],
+                'title': conversation['title'],
+                'created_at': conversation['created_at'],
+                'messages': messages,
+            })
+    return jsonify({'student_id': student_id, 'conversations': records})
+
+
+@app.post('/api/mentor/chat')
+def api_mentor_chat():
+    payload = request.get_json(silent=True)
+    payload = payload if isinstance(payload, dict) else {}
+    raw_message = payload.get('message')
+    message = raw_message.strip() if isinstance(raw_message, str) else ''
+    if not message or len(message) > 2000:
+        return jsonify({'error': 'Enter a question of 1 to 2000 characters.'}), 400
+    student_id = payload.get('student_id', 'demo-student')
+    if not isinstance(student_id, str) or not student_id.strip() or len(student_id) > 80:
+        return jsonify({'error': 'A valid student_id is required.'}), 400
+    student_id = student_id.strip()
+    age_group = safe_age_group(payload.get('age_group', '13-15'))
+    conversation_id = payload.get('conversation_id')
+    if conversation_id is not None:
+        try:
+            conversation_id = int(conversation_id)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'conversation_id must be a positive integer.'}), 400
+        if conversation_id < 1:
+            return jsonify({'error': 'conversation_id must be a positive integer.'}), 400
+
+    history = []
+    with get_db_connection() as connection:
+        if conversation_id:
+            conversation = connection.execute(
+                'SELECT id FROM ai_conversations WHERE id = ? AND student_id = ?',
+                (conversation_id, student_id),
+            ).fetchone()
+            if not conversation:
+                return jsonify({'error': 'Conversation not found.'}), 404
+            history_rows = connection.execute(
+                    'SELECT sender, text, metadata FROM ai_messages WHERE conversation_id = ? ORDER BY id ASC',
+                    (conversation_id,),
+                ).fetchall()
+            history = build_provider_history(history_rows)
+
+    try:
+        response = build_guru_response(message, age_group, history)
+    except AIProviderError as error:
+        return jsonify({'error': str(error)}), error.status_code
+
+    with get_db_connection() as connection:
+        if not conversation_id:
+            title = message[:60]
+            cursor = connection.execute(
+                'INSERT INTO ai_conversations (student_id, title) VALUES (?, ?)',
+                (student_id, title),
+            )
+            conversation_id = cursor.lastrowid
+        connection.execute(
+            'INSERT INTO ai_messages (conversation_id, sender, text, metadata) VALUES (?, ?, ?, ?)',
+            (conversation_id, 'student', message, json.dumps({'age_group': age_group})),
+        )
+        connection.execute(
+            'INSERT INTO ai_messages (conversation_id, sender, text, metadata) VALUES (?, ?, ?, ?)',
+            (conversation_id, 'guru', response['answer'], json.dumps({
+                'provider': response['provider'],
+                'model': response.get('model') or GEMINI_MODEL,
+            })),
+        )
+        connection.commit()
+    response['conversation_id'] = conversation_id
+    response['student_id'] = student_id
+    return jsonify(response)
+
+
+@app.get('/api/learning/summary')
+def api_learning_summary():
+    student_id = (request.args.get('student_id') or 'demo-student').strip()
+    if not student_id or len(student_id) > 80:
+        return jsonify({'error': 'A valid student_id is required.'}), 400
+    with get_db_connection() as connection:
+        rows = connection.execute(
+            'SELECT topic, focus_area, score, status, activity_type, chapter_name, created_at FROM learning_records WHERE student_id = ? ORDER BY created_at DESC',
+            (student_id,),
+        ).fetchall()
+    if not rows:
+        return jsonify({
+            'student_id': student_id,
+            'status': 'no-data',
+            'message': 'No learning activity has been recorded yet. Complete chapters or quizzes to generate insights.',
+            'progress': {'completed_topics': 0, 'in_progress': 0, 'average_score': None},
+            'strengths': [],
+            'improvement_areas': [],
+            'recommendations': [],
+            'recent_activity': [],
+        })
+
+    scores = [row['score'] for row in rows if row['score'] is not None]
+    average_score = round(sum(scores) / len(scores), 1) if scores else None
+    topic_status = {}
+    topic_stats = {}
+    for row in rows:
+        topic = row['topic']
+        topic_status.setdefault(topic, set()).add(row['status'])
+        topic_stats.setdefault(topic, {'scores': []})
+        if row['score'] is not None:
+            topic_stats[topic]['scores'].append(row['score'])
+    completed_topics = sum(1 for statuses in topic_status.values() if 'completed' in statuses)
+    in_progress = sum(1 for statuses in topic_status.values() if 'in_progress' in statuses and 'completed' not in statuses)
+    strengths = []
+    improvement_areas = []
+    for topic, stats in topic_stats.items():
+        if not stats['scores']:
+            continue
+        avg_topic_score = sum(stats['scores']) / len(stats['scores'])
+        if avg_topic_score >= 75:
+            strengths.append({'topic': topic, 'score': round(avg_topic_score, 1)})
+        elif avg_topic_score < 60:
+            improvement_areas.append({'topic': topic, 'score': round(avg_topic_score, 1)})
+    recommendations = []
+    for item in improvement_areas[:3]:
+        recommendations.append({
+            'title': f'Revisit {item["topic"]}',
+            'reason': f'Your recent performance in {item["topic"]} is below the recommended level. Revising the related stories and lessons can strengthen understanding.',
+        })
+    if not recommendations and strengths:
+        recommendations = [{
+            'title': f'Build on {strengths[0]["topic"]}',
+            'reason': f'Your recorded score in {strengths[0]["topic"]} is a strength. Continue with a related chapter or challenge to extend that understanding.',
+        }]
+    elif not recommendations:
+        recommendations = [{
+            'title': 'Complete a scored activity',
+            'reason': 'Your activity history is recorded, but there are not yet enough scored results to identify strengths or improvement areas.',
+        }]
+    return jsonify({
+        'student_id': student_id,
+        'status': 'has-data',
+        'progress': {
+            'completed_topics': completed_topics,
+            'in_progress': in_progress,
+            'total_topics': len(topic_status),
+            'completion_rate': round(completed_topics / len(topic_status) * 100, 1),
+            'average_score': average_score,
+        },
+        'strengths': strengths,
+        'improvement_areas': improvement_areas,
+        'recommendations': recommendations,
+        'recent_activity': [dict(row) for row in rows[:5]],
+    })
+
+
+@app.post('/api/learning/records')
+def api_learning_record_create():
+    payload = request.get_json(silent=True)
+    payload = payload if isinstance(payload, dict) else {}
+    student_id = payload.get('student_id')
+    topic = payload.get('topic')
+    status = payload.get('status')
+    if not isinstance(student_id, str) or not student_id.strip() or len(student_id.strip()) > 80:
+        return jsonify({'error': 'A valid student_id is required.'}), 400
+    if not isinstance(topic, str) or not topic.strip() or len(topic.strip()) > 160:
+        return jsonify({'error': 'Topic must contain 1 to 160 characters.'}), 400
+    if status not in ('completed', 'in_progress'):
+        return jsonify({'error': 'Status must be completed or in_progress.'}), 400
+
+    score = payload.get('score')
+    if score is not None:
+        try:
+            score = float(score)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'Score must be a number from 0 to 100.'}), 400
+        if not 0 <= score <= 100:
+            return jsonify({'error': 'Score must be a number from 0 to 100.'}), 400
+
+    optional_fields = {}
+    for field, max_length in (('focus_area', 160), ('activity_type', 80), ('chapter_name', 160)):
+        value = payload.get(field)
+        if value is not None and (not isinstance(value, str) or len(value) > max_length):
+            return jsonify({'error': f'{field} must be no more than {max_length} characters.'}), 400
+        optional_fields[field] = value.strip() if isinstance(value, str) else None
+
+    with get_db_connection() as connection:
+        cursor = connection.execute(
+            'INSERT INTO learning_records (student_id, topic, focus_area, score, status, activity_type, chapter_name) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (student_id.strip(), topic.strip(), optional_fields['focus_area'], score, status,
+             optional_fields['activity_type'], optional_fields['chapter_name']),
+        )
+        record_id = cursor.lastrowid
+    return jsonify({'record_id': record_id, 'student_id': student_id.strip(), 'topic': topic.strip(), 'status': status}), 201
+
+
+@app.get('/api/debate/list')
+def api_debate_list():
+    with get_db_connection() as connection:
+        debates = connection.execute(
+            """
+            SELECT d.id, d.topic, d.mode, d.created_by, d.age_group, d.status, d.current_round, d.created_at,
+                   (SELECT COUNT(*) FROM debate_participants p WHERE p.debate_id = d.id AND p.role = 'student') AS student_count
+            FROM debates d
+            WHERE d.status IN ('open', 'in_progress')
+            ORDER BY d.created_at DESC
+            LIMIT 50
+            """
+        ).fetchall()
+    return jsonify({'debates': [dict(row) for row in debates]})
+
+
+@app.post('/api/debate/create')
+def api_debate_create():
+    payload = request.get_json(silent=True)
+    payload = payload if isinstance(payload, dict) else {}
+    topic = payload.get('topic')
+    mode = payload.get('mode', 'student-vs-ai')
+    created_by = payload.get('created_by', 'demo-student')
+    position = payload.get('position', 'for')
+    if not isinstance(topic, str) or not topic.strip() or len(topic.strip()) > 200:
+        return jsonify({'error': 'Topic must contain 1 to 200 characters.'}), 400
+    if mode not in ('student-vs-ai', 'student-vs-student'):
+        return jsonify({'error': 'Choose a supported debate mode.'}), 400
+    if not isinstance(created_by, str) or not created_by.strip() or len(created_by.strip()) > 80:
+        return jsonify({'error': 'A valid created_by student id is required.'}), 400
+    if position not in ('for', 'against'):
+        return jsonify({'error': 'Position must be for or against.'}), 400
+    topic = topic.strip()
+    created_by = created_by.strip()
+    age_group = safe_age_group(payload.get('age_group', '13-15'))
+    status = 'open'
+    with get_db_connection() as connection:
+        cursor = connection.execute(
+            'INSERT INTO debates (topic, mode, created_by, age_group, status) VALUES (?, ?, ?, ?, ?)',
+            (topic, mode, created_by, age_group, status),
+        )
+        debate_id = cursor.lastrowid
+        connection.execute(
+            'INSERT INTO debate_participants (debate_id, student_id, role, position, ready) VALUES (?, ?, ?, ?, ?)',
+            (debate_id, created_by, 'student', position, 0),
+        )
+        if mode == 'student-vs-ai':
+            ai_position = 'against' if position == 'for' else 'for'
+            connection.execute(
+                'INSERT INTO debate_participants (debate_id, student_id, role, position, ready) VALUES (?, ?, ?, ?, ?)',
+                (debate_id, 'ai-opponent', 'ai', ai_position, 1),
+            )
+        for round_number in range(1, 4):
+            connection.execute(
+                'INSERT INTO debate_rounds (debate_id, round_number, status) VALUES (?, ?, ?)',
+                (debate_id, round_number, 'waiting_ready' if round_number == 1 else 'not_started'),
+            )
+    return jsonify({'debate': {
+        'id': debate_id, 'topic': topic, 'mode': mode, 'created_by': created_by,
+        'status': status, 'current_round': 1, 'age_group': age_group,
+    }}), 201
+
+
+@app.post('/api/debate/<int:debate_id>/join')
+def api_debate_join(debate_id):
+    payload = request.get_json(silent=True)
+    payload = payload if isinstance(payload, dict) else {}
+    student_id = payload.get('student_id', 'demo-student')
+    if not isinstance(student_id, str) or not student_id.strip() or len(student_id.strip()) > 80:
+        return jsonify({'error': 'A valid student_id is required.'}), 400
+    student_id = student_id.strip()
+    with get_db_connection() as connection:
+        debate = connection.execute('SELECT id, status, mode, created_by FROM debates WHERE id = ?', (debate_id,)).fetchone()
+        if not debate:
+            return jsonify({'error': 'Debate not found.'}), 404
+        if debate['status'] != 'open' or debate['mode'] != 'student-vs-student':
+            return jsonify({'error': 'This debate is not accepting another student.'}), 400
+        existing = connection.execute(
+            'SELECT id FROM debate_participants WHERE debate_id = ? AND student_id = ?',
+            (debate_id, student_id),
+        ).fetchone()
+        if existing:
+            return jsonify({'error': 'You have already joined this debate.'}), 400
+        participant_count = connection.execute(
+            'SELECT COUNT(*) AS count FROM debate_participants WHERE debate_id = ? AND role = ?',
+            (debate_id, 'student'),
+        ).fetchone()['count']
+        if participant_count != 1:
+            return jsonify({'error': 'This debate cannot accept another student.'}), 400
+        if student_id == debate['created_by']:
+            return jsonify({'error': 'The debate creator is already a participant.'}), 409
+        creator = connection.execute(
+            'SELECT position FROM debate_participants WHERE debate_id = ? AND student_id = ?',
+            (debate_id, debate['created_by']),
+        ).fetchone()
+        position = 'against' if creator and creator['position'] == 'for' else 'for'
+        connection.execute(
+            'INSERT INTO debate_participants (debate_id, student_id, role, position, ready) VALUES (?, ?, ?, ?, ?)',
+            (debate_id, student_id, 'student', position, 0),
+        )
+    return jsonify({'message': 'Joined debate successfully.', 'debate_id': debate_id, 'student_id': student_id})
+
+
+@app.post('/api/debate/<int:debate_id>/ready')
+def api_debate_ready(debate_id):
+    payload = request.get_json(silent=True)
+    payload = payload if isinstance(payload, dict) else {}
+    student_id = payload.get('student_id')
+    if not isinstance(student_id, str) or not student_id.strip() or len(student_id.strip()) > 80:
+        return jsonify({'error': 'A valid student_id is required.'}), 400
+    student_id = student_id.strip()
+    with get_db_connection() as connection:
+        debate = connection.execute('SELECT mode, status, current_round FROM debates WHERE id = ?', (debate_id,)).fetchone()
+        if not debate:
+            return jsonify({'error': 'Debate not found.'}), 404
+        if debate['status'] == 'completed':
+            return jsonify({'error': 'This debate is completed.'}), 409
+        participant = connection.execute(
+            "SELECT id FROM debate_participants WHERE debate_id = ? AND student_id = ? AND role = 'student'",
+            (debate_id, student_id),
+        ).fetchone()
+        if not participant:
+            return jsonify({'error': 'Only a registered debate participant can mark ready.'}), 403
+        connection.execute(
+            'UPDATE debate_participants SET ready = 1 WHERE debate_id = ? AND student_id = ?',
+            (debate_id, student_id),
+        )
+        expected_count = 2 if debate['mode'] in ('student-vs-ai', 'student-vs-student') else 0
+        ready_count = connection.execute(
+            "SELECT COUNT(*) AS count FROM debate_participants WHERE debate_id = ? AND ready = 1 AND role IN ('student','ai')",
+            (debate_id,),
+        ).fetchone()['count']
+        participant_count = connection.execute(
+            "SELECT COUNT(*) AS count FROM debate_participants WHERE debate_id = ? AND role IN ('student','ai')",
+            (debate_id,),
+        ).fetchone()['count']
+        started = participant_count == expected_count and ready_count == expected_count
+        if started and debate['status'] == 'open':
+            connection.execute("UPDATE debates SET status = 'in_progress', current_round = 1 WHERE id = ?", (debate_id,))
+            connection.execute(
+                "UPDATE debate_rounds SET status = 'active', started_at = CURRENT_TIMESTAMP WHERE debate_id = ? AND round_number = 1",
+                (debate_id,),
+            )
+        elif debate['status'] == 'open':
+            connection.execute(
+                "UPDATE debate_rounds SET status = 'waiting_ready' WHERE debate_id = ? AND round_number = 1",
+                (debate_id,),
+            )
+    return jsonify({
+        'message': 'Debate started.' if started else 'You are ready. Waiting for the other participant.',
+        'debate_id': debate_id,
+        'status': 'in_progress' if started else 'open',
+        'started': started,
+    })
+
+
+@app.post('/api/debate/<int:debate_id>/arguments')
+@app.post('/api/debate/<int:debate_id>/rounds/<int:round_number>/arguments')
+def api_debate_argument(debate_id, round_number=None):
+    payload = request.get_json(silent=True)
+    payload = payload if isinstance(payload, dict) else {}
+    student_id = payload.get('student_id')
+    argument = payload.get('argument')
+    if not isinstance(student_id, str) or not student_id.strip() or len(student_id.strip()) > 80:
+        return jsonify({'error': 'A valid student_id is required.'}), 400
+    if not isinstance(argument, str) or not argument.strip() or len(argument.strip()) > 3000:
+        return jsonify({'error': 'Argument must contain 1 to 3000 characters.'}), 400
+    student_id = student_id.strip()
+    argument = argument.strip()
+
+    submitted_round = round_number if round_number is not None else payload.get('round_number')
+    if submitted_round is not None:
+        try:
+            submitted_round = int(submitted_round)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'round_number must be 1, 2, or 3.'}), 400
+        if submitted_round not in (1, 2, 3):
+            return jsonify({'error': 'round_number must be 1, 2, or 3.'}), 400
+
+@app.post('/api/debate/<int:debate_id>/arguments')
+def api_debate_argument_legacy(debate_id):
+    return api_debate_argument_round(debate_id, None)
+
+
+@app.post('/api/debate/<int:debate_id>/rounds/<int:round_number>/arguments')
+def api_debate_argument_round(debate_id, round_number):
+        round_row = connection.execute(
+            'SELECT status FROM debate_rounds WHERE debate_id = ? AND round_number = ?',
+            (debate_id, current_round),
+        ).fetchone()
+        if not round_row:
+            return jsonify({'error': 'Round state was not initialized.'}), 500
+        existing_submission = connection.execute(
+            'SELECT id FROM debate_round_submissions WHERE debate_id = ? AND round_number = ? AND participant_id = ?',
+            (debate_id, current_round, participant['id']),
+        ).fetchone()
+        if existing_submission:
+            return jsonify({'error': 'You already submitted an argument for this round.'}), 409
+
+        ai_mode = debate['mode'] == 'student-vs-ai'
+        if ai_mode:
+            if round_row['status'] != 'active':
+                return jsonify({'error': 'The current AI round is already processing or complete.'}), 409
+            claim = connection.execute(
+                "UPDATE debate_rounds SET status = 'generating_ai' WHERE debate_id = ? AND round_number = ? AND status = 'active'",
+                (debate_id, current_round),
+            )
+            if claim.rowcount != 1:
+                return jsonify({'error': 'The round is already processing.'}), 409
+            ai_participant = connection.execute(
+                "SELECT * FROM debate_participants WHERE debate_id = ? AND role = 'ai'",
+                (debate_id,),
+            ).fetchone()
+            if not ai_participant:
+                connection.execute(
+                    "UPDATE debate_rounds SET status = 'active' WHERE debate_id = ? AND round_number = ?",
+                    (debate_id, current_round),
+                )
+                return jsonify({'error': 'This AI debate has no configured AI opponent participant.'}), 500
+            prior_rows = connection.execute(
+                """
+                SELECT s.round_number, s.argument, p.student_id, p.role
+                FROM debate_round_submissions AS s JOIN debate_participants AS p ON p.id = s.participant_id
+                WHERE s.debate_id = ? AND s.round_number < ? ORDER BY s.round_number, p.id
+                """,
+                (debate_id, current_round),
+            ).fetchall()
+            opponent_history = [
+                {'sender': 'guru' if row['role'] == 'ai' else 'student', 'text': row['argument']}
+                for row in prior_rows
+            ]
+            prior_judge_history = [
+                {'round': row['round_number'], 'speaker': 'Gemini AI Opponent' if row['role'] == 'ai' else row['student_id'], 'argument': row['argument']}
+                for row in prior_rows
+            ]
+            participant_pair = [participant, ai_participant]
+        else:
+            if round_row['status'] not in ('active', 'awaiting_opponent'):
+                return jsonify({'error': 'The current round is not accepting submissions.'}), 409
+            connection.execute(
+                'INSERT INTO debate_round_submissions (debate_id, round_number, participant_id, argument) VALUES (?, ?, ?, ?)',
+                (debate_id, current_round, participant['id'], argument),
+            )
+            connection.execute(
+                'INSERT INTO debate_arguments (debate_id, speaker, argument, round_number) VALUES (?, ?, ?, ?)',
+                (debate_id, student_id, argument, current_round),
+            )
+            count = connection.execute(
+                'SELECT COUNT(*) AS count FROM debate_round_submissions WHERE debate_id = ? AND round_number = ?',
+                (debate_id, current_round),
+            ).fetchone()['count']
+            if count == 2:
+                connection.execute(
+                    "UPDATE debate_rounds SET status = 'awaiting_judge' WHERE debate_id = ? AND round_number = ?",
+                    (debate_id, current_round),
+                )
+                should_judge = True
+            else:
+                connection.execute(
+                    "UPDATE debate_rounds SET status = 'awaiting_opponent' WHERE debate_id = ? AND round_number = ?",
+                    (debate_id, current_round),
+                )
+
+    if not ai_mode:
+        if not should_judge:
+            return jsonify({
+                'message': 'Argument saved; waiting for the other participant.',
+                'debate_id': debate_id,
+                'round_number': current_round,
+                'round_status': 'awaiting_opponent',
+            }), 201
+        return _evaluate_pending_debate_round(debate_id, current_round, student_id)
+
+    ai_position = ai_participant['position']
+    debate_history = [
+        {'sender': 'guru' if row['role'] == 'ai' else 'student', 'text': row['argument']}
+        for row in prior_rows
+    ]
+    try:
+        ai_argument = generate_debate_opponent_argument(debate, ai_position, current_round, argument, debate_history)
+        judge_arguments = [
+            {'participant_key': 'A', 'position': participant['position'], 'argument': argument},
+            {'participant_key': 'B', 'position': ai_position, 'argument': ai_argument},
+        ]
+        judgement = judge_debate_round(debate['topic'], current_round, judge_arguments, prior_judge_history, debate['age_group'])
+    except AIProviderError as error:
+        with get_db_connection() as connection:
+            connection.execute(
+                "UPDATE debate_rounds SET status = 'active' WHERE debate_id = ? AND round_number = ? AND status = 'generating_ai'",
+                (debate_id, current_round),
+            )
+        return jsonify({
+            'error': str(error),
+            'category': error.category,
+            'round_number': current_round,
+            'round_status': 'active',
+            'argument_saved': False,
+            'message': 'Gemini did not complete this round. Your argument was not saved; retry safely.',
+        }), error.status_code
+
+    with get_db_connection() as connection:
+        state = connection.execute(
+            'SELECT status FROM debate_rounds WHERE debate_id = ? AND round_number = ?',
+            (debate_id, current_round),
+        ).fetchone()
+        if not state or state['status'] != 'generating_ai':
+            return jsonify({'error': 'Round state changed while Gemini was responding.'}), 409
+        connection.execute(
+            'INSERT INTO debate_round_submissions (debate_id, round_number, participant_id, argument) VALUES (?, ?, ?, ?)',
+            (debate_id, current_round, participant['id'], argument),
+        )
+        connection.execute(
+            'INSERT INTO debate_round_submissions (debate_id, round_number, participant_id, argument) VALUES (?, ?, ?, ?)',
+            (debate_id, current_round, ai_participant['id'], ai_argument),
+        )
+        connection.execute(
+            'INSERT INTO debate_arguments (debate_id, speaker, argument, round_number) VALUES (?, ?, ?, ?)',
+            (debate_id, student_id, argument, current_round),
+        )
+        connection.execute(
+            'INSERT INTO debate_arguments (debate_id, speaker, argument, round_number) VALUES (?, ?, ?, ?)',
+            (debate_id, 'ai-opponent', ai_argument, current_round),
+        )
+        connection.execute(
+            "UPDATE debate_rounds SET status = 'judging' WHERE debate_id = ? AND round_number = ?",
+            (debate_id, current_round),
+        )
+        current_debate = connection.execute('SELECT * FROM debates WHERE id = ?', (debate_id,)).fetchone()
+        result = _persist_judged_round(connection, current_debate, current_round, participant_pair, judgement)
+        result['ai_response'] = ai_argument
+        result['ai_participant'] = 'Gemini AI Opponent'
+    return jsonify(result), 201
+
+
+@app.post('/api/debate/<int:debate_id>/rounds/<int:round_number>/evaluate')
+def api_debate_round_evaluate(debate_id, round_number):
+    payload = request.get_json(silent=True)
+    payload = payload if isinstance(payload, dict) else {}
+    student_id = payload.get('student_id')
+    if not isinstance(student_id, str) or not student_id.strip() or len(student_id.strip()) > 80:
+        return jsonify({'error': 'A valid student_id is required.'}), 400
+    return _evaluate_pending_debate_round(debate_id, round_number, student_id.strip())
+
+
+@app.get('/api/debate/<int:debate_id>')
+def api_debate_detail(debate_id):
+    with get_db_connection() as connection:
+        debate = connection.execute(
+            'SELECT * FROM debates WHERE id = ?',
+            (debate_id,),
+        ).fetchone()
+        if not debate:
+            return jsonify({'error': 'Debate not found.'}), 404
+        participants = connection.execute(
+            'SELECT student_id, role, position FROM debate_participants WHERE debate_id = ? ORDER BY id ASC',
+            (debate_id,),
+        ).fetchall()
+        arguments = connection.execute(
+            'SELECT speaker, argument, round_number, created_at FROM debate_arguments WHERE debate_id = ? ORDER BY id ASC',
+            (debate_id,),
+        ).fetchall()
+    return jsonify({
+        'debate': dict(debate),
+        'participants': [dict(row) for row in participants],
+        'arguments': [dict(row) for row in arguments],
+    })
+
+
+@app.post('/api/debate/<int:debate_id>/complete')
+def api_debate_complete(debate_id):
+    payload = request.get_json(silent=True)
+    payload = payload if isinstance(payload, dict) else {}
+    student_id = payload.get('student_id')
+    if not isinstance(student_id, str) or not student_id.strip() or len(student_id.strip()) > 80:
+        return jsonify({'error': 'A valid student_id is required.'}), 400
+    with get_db_connection() as connection:
+        debate = connection.execute('SELECT created_by, status FROM debates WHERE id = ?', (debate_id,)).fetchone()
+        if not debate:
+            return jsonify({'error': 'Debate not found.'}), 404
+        if debate['created_by'] != student_id.strip():
+            return jsonify({'error': 'Only the debate creator can complete this debate.'}), 403
+        if debate['status'] == 'completed':
+            return jsonify({'error': 'This debate is already completed.'}), 400
+        connection.execute("UPDATE debates SET status = 'completed' WHERE id = ?", (debate_id,))
+    return jsonify({'message': 'Debate completed.', 'debate_id': debate_id, 'status': 'completed'})
+
+
+init_db()
+
+
+if __name__ == '__main__':
+    app.run(host='127.0.0.1', port=5000, debug=os.environ.get('FLASK_DEBUG') == '1')

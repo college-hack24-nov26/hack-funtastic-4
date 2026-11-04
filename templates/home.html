@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}MythoVerse | Learning &bull; Wisdom &bull; Story{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='home.css', v='20261104-1') }}" />
+<div class="home-page">
+  <section class="home-hero">
+    <div class="home-hero-copy">
+      <p class="eyebrow accent">An illuminated learning space</p>
+      <h2>Learning <span>&bull;</span> Wisdom <span>&bull;</span> Story</h2>
+      <p class="home-hero-lede">Walk through the epics, ideas, and living traditions of Indian mythology with a personal guide for every step of the journey.</p>
+      <div class="home-hero-actions">
+        <a class="button primary" href="/ai-mentor">Begin Your Journey <span aria-hidden="true">&rarr;</span></a>
+        <a class="button ghost" href="#mythology-atlas">Explore the atlas</a>
+      </div>
+      <div class="home-hero-note"><span class="home-sun-mark">&starf;</span> Grounded in the MythoVerse local knowledge base</div>
+    </div>
+    <div class="home-cosmic-visual" aria-label="Illustrated sun, moon, and story path">
+      <div class="home-orbit home-orbit-one"></div>
+      <div class="home-orbit home-orbit-two"></div>
+      <div class="home-sun">&#x0950;</div>
+      <div class="home-star home-star-one">&starf;</div>
+      <div class="home-star home-star-two">&star;</div>
+      <div class="home-visual-caption"><strong>MYTHOVERSE</strong><span>Stories that shape us</span></div>
+    </div>
+  </section>
+
+  <section class="home-welcome-strip">
+    <div><p class="eyebrow">Your learning path</p><h3>Choose a doorway into the tradition</h3></div>
+    <p>Read, reflect, ask, and debate. Your progress is saved when you learn through the platform.</p>
+  </section>
+
+  <section class="home-featured-section" aria-labelledby="home-featured-title">
+    <div class="home-section-heading">
+      <div><p class="eyebrow accent">Featured journeys</p><h3 id="home-featured-title">Stories and characters to meet first</h3></div>
+      <span class="home-atlas-count">Curated from the local dataset</span>
+    </div>
+    <div class="home-featured-grid">
+      <a class="home-featured-story" href="/ai-mentor?q=Lord%20Rama">
+        <span class="home-featured-number">01 / EPIC</span><h4>Rama's path of duty</h4>
+        <p>Follow exile, friendship, courage, and the return to Ayodhya through the Ramayana.</p>
+        <span class="home-card-link">Meet Rama &rarr;</span>
+      </a>
+      <a class="home-featured-story" href="/ai-mentor?q=Krishna%20and%20Arjuna">
+        <span class="home-featured-number">02 / DIALOGUE</span><h4>Krishna and Arjuna</h4>
+        <p>Enter the chariot-side conversation that frames the Bhagavad Gita's questions on action and duty.</p>
+        <span class="home-card-link">Explore their dialogue &rarr;</span>
+      </a>
+      <a class="home-featured-story" href="/ai-mentor?q=Hanuman">
+        <span class="home-featured-number">03 / CHARACTER</span><h4>Hanuman's devotion</h4>
+        <p>Discover the strength, service, and loyalty associated with one of the Ramayana's beloved figures.</p>
+        <span class="home-card-link">Discover Hanuman &rarr;</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="home-module-grid">
+    <a class="home-module-card home-module-guru" href="/ai-mentor">
+      <span class="home-card-icon">&#x0950;</span>
+      <span class="eyebrow accent">Ask and discover</span>
+      <h3>AI Guru</h3>
+      <p>Ask about characters, relationships, events, teachings, and the questions that connect them.</p>
+      <span class="home-card-link">Open the conversation &rarr;</span>
+    </a>
+    <a class="home-module-card home-module-learning" href="/learning-intelligence">
+      <span class="home-card-icon">&starf;</span>
+      <span class="eyebrow accent">Learn with intention</span>
+      <h3>Learning Intelligence</h3>
+      <p>See your real progress, find the topics that need practice, and follow your next recommendation.</p>
+      <span class="home-card-link">View your path &rarr;</span>
+    </a>
+    <a class="home-module-card home-module-debate" href="/debate-room">
+      <span class="home-card-icon">&#9876;</span>
+      <span class="eyebrow accent">Think and articulate</span>
+      <h3>Debate Room</h3>
+      <p>Test an interpretation across three rounds with a human partner or the dataset-powered opponent.</p>
+      <span class="home-card-link">Enter the arena &rarr;</span>
+    </a>
+  </section>
+
+  <section class="home-dashboard-grid">
+    <div class="home-progress-card" id="home-progress-card">
+      <div class="home-section-heading"><div><p class="eyebrow accent">A living path</p><h3>Your learning overview</h3></div><a href="/learning-intelligence">Open intelligence &rarr;</a></div>
+      <div class="home-progress-metrics">
+        <div><strong id="home-progress-score">--</strong><span>Average score</span></div>
+        <div><strong id="home-progress-quizzes">--</strong><span>Quizzes attempted</span></div>
+        <div><strong id="home-progress-lessons">--</strong><span>Lessons completed</span></div>
+      </div>
+      <p id="home-progress-message" class="home-muted">Loading your learning path...</p>
+    </div>
+    <div class="home-quote-card">
+      <span class="home-quote-mark">&ldquo;</span>
+      <p>Every story is a mirror, and every question is a step toward seeing more clearly.</p>
+      <span class="home-quote-source">A MythoVerse learning principle</span>
+    </div>
+  </section>
+
+  <section id="mythology-atlas" class="home-atlas-section">
+    <div class="home-section-heading"><div><p class="eyebrow accent">The mythology atlas</p><h3>Begin with a story, stay for the wisdom</h3></div><span class="home-atlas-count">Local knowledge base</span></div>
+    <div class="home-topic-grid">
+      <a href="/ai-mentor?q=Ramayana" class="home-topic-card"><span>01</span><h4>Ramayana</h4><p>Duty, exile, loyalty, courage, and the journey home.</p></a>
+      <a href="/ai-mentor?q=Mahabharata" class="home-topic-card"><span>02</span><h4>Mahabharata</h4><p>Family, consequence, strategy, and difficult choices.</p></a>
+      <a href="/ai-mentor?q=Bhagavad%20Gita" class="home-topic-card"><span>03</span><h4>Bhagavad Gita</h4><p>Krishna, Arjuna, action, knowledge, devotion, and the steady mind.</p></a>
+      <a href="/ai-mentor?q=Dharma%20and%20Karma" class="home-topic-card"><span>04</span><h4>Dharma &amp; Karma</h4><p>Ideas to carry from ancient questions into everyday life.</p></a>
+    </div>
+  </section>
+</div>
+{% endblock %}
