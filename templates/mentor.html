@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}AI Guru | MythoVerse{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='mentor.css', v='20261104-1') }}" />
+<div class="mentor-page">
+  <section class="mentor-intro">
+    <div class="mentor-intro-symbol">&#x0950;</div>
+    <div>
+      <p class="eyebrow accent">MythoVerse AI Guru</p>
+      <h2>A patient guide for curious minds</h2>
+      <p>Ask about the people, places, events, and ideas woven through Indian epics and ancient wisdom. Every response is grounded in the local mythology knowledge base and includes its source trail.</p>
+    </div>
+    <div class="mentor-intro-status"><span class="mentor-status-dot"></span><span>Dataset grounded</span></div>
+  </section>
+
+  <section class="mentor-workspace">
+    <aside class="mentor-context-panel">
+      <div class="mentor-context-heading"><p class="eyebrow accent">Your study desk</p><h3>Begin with a question</h3></div>
+      <p class="mentor-context-copy">Choose a prompt or write your own. The Guru will adapt the explanation to your selected age group.</p>
+      <div class="mentor-suggestion-stack">
+        <button class="suggestion mentor-suggestion" data-question="Who was Arjuna's charioteer?">Who was Arjuna's charioteer?</button>
+        <button class="suggestion mentor-suggestion" data-question="Where was Lord Krishna born?">Where was Lord Krishna born?</button>
+        <button class="suggestion mentor-suggestion" data-question="What does Bhagavad Gita Chapter 2 teach?">What does Chapter 2 of the Gita teach?</button>
+        <button class="suggestion mentor-suggestion" data-question="What are the qualities of Lord Rama?">What are the qualities of Lord Rama?</button>
+      </div>
+      <div class="mentor-history-block"><div class="mentor-history-heading"><h3>Conversation history</h3><button class="button ghost" id="new-chat">New chat</button></div><div id="conversation-list" class="suggestion-list" aria-live="polite"></div></div>
+    </aside>
+
+    <section class="mentor-chat-card">
+      <div class="mentor-chat-heading">
+        <div class="mentor-avatar-large">&#x0950;</div>
+        <div><p class="eyebrow accent">The teacher's chamber</p><h2>Ask MythoVerse AI Guru</h2><span>Stories, relationships, teachings, and context &mdash; in one conversation.</span></div>
+      </div>
+      <div class="mentor-chat-log-wrap"><div id="chat-log" class="chat-log" aria-live="polite"></div></div>
+      <div class="mentor-composer-wrap">
+        <div class="mentor-composer-label"><span>Continue your inquiry</span><span>Press Enter to send</span></div>
+        <div class="composer mentor-composer">
+          <label for="mentor-question" class="sr-only">Ask MythoVerse AI Guru</label>
+          <input id="mentor-question" type="text" maxlength="2000" placeholder="Ask about a story, character, value, or lesson..." />
+          <select id="age-group" aria-label="Explanation age group">
+            <option value="6-8">6&ndash;8 years</option>
+            <option value="9-12" selected>9&ndash;12 years</option>
+            <option value="13-15">13&ndash;15 years</option>
+            <option value="16-18">16&ndash;18 years</option>
+            <option value="18+">18+ years</option>
+          </select>
+          <button class="button primary" id="send-mentor-question">Send <span aria-hidden="true">&rarr;</span></button>
+        </div>
+        <p id="mentor-status" role="status" aria-live="polite">Ready when you are.</p>
+      </div>
+    </section>
+  </section>
+</div>
+{% endblock %}

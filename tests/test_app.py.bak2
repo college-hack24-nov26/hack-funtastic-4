@@ -1,0 +1,361 @@
+import os
+import sqlite3
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+
+from google.genai.errors import APIError
+
+import app
+
+
+class MythoverseAppTest(unittest.TestCase):
+    def setUp(self):
+        app.app.config['TESTING'] = True
+        self.previous_database = app.app.config.get('DATABASE')
+        self.temp_directory = tempfile.TemporaryDirectory()
+        app.app.config['DATABASE'] = os.path.join(self.temp_directory.name, 'test.db')
+        app.init_db()
+        self.client = app.app.test_client()
+
+    def tearDown(self):
+        app.app.config['DATABASE'] = self.previous_database
+        self.temp_directory.cleanup()
+
+    def test_homepage_redirects_to_ai_mentor(self):
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.headers['Location'], '/ai-mentor')
+
+    def test_assigned_module_pages_render(self):
+        for path in ('/ai-mentor', '/learning-intelligence', '/debate-room'):
+            with self.subTest(path=path):
+                response = self.client.get(path)
+                self.assertEqual(response.status_code, 200)
+                self.assertIn(b'styles.css', response.data)
+                self.assertIn(b'app.js', response.data)
+
+    def test_dotenv_loads_gemini_settings_and_prioritizes_project_credentials(self):
+        with tempfile.TemporaryDirectory() as directory:
+            env_path = Path(directory) / '.env'
+            env_path.write_text(
+                'GEMINI_API_KEY=dotenv-test-key\nGEMINI_MODEL=gemini-test-model\n',
+                encoding='utf-8',
+            )
+            with patch.dict(os.environ, {'GEMINI_API_KEY': 'process-test-key'}):
+                app.load_environment(env_path)
+                self.assertEqual(os.environ['GEMINI_API_KEY'], 'dotenv-test-key')
+                self.assertEqual(os.environ['GEMINI_MODEL'], 'gemini-test-model')
+
+    @patch('app.genai.Client')
+    def test_gemini_client_and_generate_content_configuration(self, create_client):
+        app.app.extensions.pop('gemini_client', None)
+        create_client.return_value.models.generate_content.return_value.text = 'A Gemini answer.'
+        history = [
+            {'sender': 'student', 'text': 'What is dharma?'},
+            {'sender': 'guru', 'text': 'A prior Gemini answer.'},
+        ]
+        with patch.dict(os.environ, {'GEMINI_API_KEY': 'unit-test-key', 'GEMINI_MODEL': 'gemini-test-model'}), \
+                patch.object(app, 'GEMINI_API_KEY', None):
+            result = app.generate_gemini_response('Explain dharma further.', '9-12', history)
+        self.assertEqual(result['provider'], 'gemini')
+        self.assertEqual(result['answer'], 'A Gemini answer.')
+        self.assertEqual(result['model'], 'gemini-test-model')
+        create_client.assert_called_once()
+        self.assertEqual(create_client.call_args.kwargs['api_key'], 'unit-test-key')
+        self.assertEqual(create_client.call_args.kwargs['http_options'].timeout, 30_000)
+        self.assertEqual(create_client.call_args.kwargs['http_options'].api_version, 'v1beta')
+        call = create_client.return_value.models.generate_content.call_args.kwargs
+        self.assertEqual(call['model'], 'gemini-test-model')
+        self.assertIn('Indian epics', call['config'].system_instruction)
+        self.assertEqual(call['config'].max_output_tokens, 900)
+        self.assertIsNone(call['config'].thinking_config)
+        self.assertEqual([item['role'] for item in call['contents']], ['user', 'model', 'user'])
+        self.assertEqual(call['contents'][1]['parts'][0]['text'], 'A prior Gemini answer.')
+        app.app.extensions.pop('gemini_client', None)
+
+    def test_gemini_invalid_key_and_quota_errors_are_actionable(self):
+        invalid_key = APIError(400, {'error': {'message': 'API key not valid. Please pass a valid API key.'}})
+        quota = APIError(429, {'error': {'message': 'Resource exhausted: quota exceeded.'}})
+        deadline = APIError(504, {'error': {'message': 'Deadline expired before operation could complete.'}})
+        unsupported_model = APIError(404, {'error': {'message': 'Model not found.'}})
+        google_busy = APIError(503, {'error': {'message': 'Service unavailable.'}})
+        self.assertIn('GEMINI_API_KEY', str(app.gemini_api_error(invalid_key)))
+        self.assertIn('quota or rate limit', str(app.gemini_api_error(quota)))
+        self.assertIn('did not finish before Google', str(app.gemini_api_error(deadline)))
+        self.assertEqual(app.gemini_api_error(unsupported_model).category, 'unsupported_model')
+        self.assertEqual(app.gemini_api_error(google_busy).status_code, 503)
+
+    @patch('app.genai.Client')
+    def test_gemini_empty_and_blocked_responses_are_not_saved_as_answers(self, create_client):
+        app.app.extensions.pop('gemini_client', None)
+        create_client.return_value.models.generate_content.return_value = SimpleNamespace(
+            text='', prompt_feedback=None, candidates=[],
+        )
+        with patch.dict(os.environ, {'GEMINI_API_KEY': 'unit-test-key'}), \
+                patch.object(app, 'GEMINI_API_KEY', None):
+            with self.assertRaisesRegex(app.AIProviderError, 'returned no text'):
+                app.generate_gemini_response('Explain dharma.', '9-12')
+
+            app.app.extensions.pop('gemini_client', None)
+            create_client.return_value.models.generate_content.return_value = SimpleNamespace(
+                text=None,
+                prompt_feedback=SimpleNamespace(block_reason=SimpleNamespace(name='SAFETY')),
+                candidates=[],
+            )
+            with self.assertRaisesRegex(app.AIProviderError, 'safety filters blocked'):
+                app.generate_gemini_response('Explain dharma.', '9-12')
+        app.app.extensions.pop('gemini_client', None)
+
+    def test_gemini_history_excludes_legacy_local_fallback_answers(self):
+        rows = [
+            {'sender': 'student', 'text': 'Old question', 'metadata': '{}'},
+            {'sender': 'guru', 'text': 'Old canned answer', 'metadata': '{"provider":"local-guidance"}'},
+            {'sender': 'student', 'text': 'Real question', 'metadata': '{}'},
+            {'sender': 'guru', 'text': 'Real Gemini answer', 'metadata': '{"provider":"gemini"}'},
+            {'sender': 'student', 'text': 'Unanswered question', 'metadata': '{}'},
+        ]
+        self.assertEqual(app.build_provider_history(rows), [
+            {'sender': 'student', 'text': 'Real question'},
+            {'sender': 'guru', 'text': 'Real Gemini answer'},
+        ])
+
+    @patch('app.genai.Client')
+    def test_gemini_network_timeout_has_clear_error(self, create_client):
+        app.app.extensions.pop('gemini_client', None)
+        create_client.return_value.models.generate_content.side_effect = TimeoutError()
+        with patch.dict(os.environ, {'GEMINI_API_KEY': 'unit-test-key'}), \
+                patch.object(app, 'GEMINI_API_KEY', None):
+            with self.assertRaisesRegex(app.AIProviderError, 'Could not reach Gemini'):
+                app.generate_gemini_response('Explain dharma.', '9-12')
+        app.app.extensions.pop('gemini_client', None)
+
+    @patch('app.generate_gemini_response', return_value={
+        'answer': 'Krishna advises Arjuna to think carefully about duty and action.',
+        'provider': 'gemini',
+        'age_group': '9-12',
+    })
+    def test_mentor_chat_uses_provider_and_saves_history(self, provider):
+        payload = {'message': 'Why did Krishna guide Arjuna?', 'student_id': 'demo-student', 'age_group': '9-12'}
+        response = self.client.post('/api/mentor/chat', json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.get_json()
+        self.assertEqual(data['answer'], 'Krishna advises Arjuna to think carefully about duty and action.')
+        self.assertIn('age_group', data)
+        self.assertIn('provider', data)
+        history = self.client.get('/api/mentor/conversations?student_id=demo-student').get_json()
+        self.assertEqual(len(history['conversations']), 1)
+        self.assertEqual(len(history['conversations'][0]['messages']), 2)
+        continued = self.client.post('/api/mentor/chat', json={
+            **payload,
+            'message': 'Can you explain dharma with that in mind?',
+            'conversation_id': data['conversation_id'],
+        })
+        self.assertEqual(continued.status_code, 200)
+        self.assertEqual(provider.call_count, 2)
+        self.assertEqual(len(provider.call_args_list[1].args[2]), 2)
+        history = self.client.get('/api/mentor/conversations?student_id=demo-student').get_json()
+        self.assertEqual(len(history['conversations'][0]['messages']), 4)
+
+    def test_mentor_chat_reports_missing_key_without_saving_fake_answer(self):
+        with patch.dict(os.environ, {'GEMINI_API_KEY': ''}), patch.object(app, 'GEMINI_API_KEY', None):
+            response = self.client.post('/api/mentor/chat', json={'message': 'What is dharma?'})
+        self.assertEqual(response.status_code, 503)
+        self.assertIn('GEMINI_API_KEY', response.get_json()['error'])
+        history = self.client.get('/api/mentor/conversations?student_id=demo-student').get_json()
+        self.assertEqual(history['conversations'], [])
+
+    @patch('app.generate_gemini_response', side_effect=app.AIProviderError('Provider unavailable.'))
+    def test_mentor_chat_reports_provider_failure(self, provider):
+        response = self.client.post('/api/mentor/chat', json={'message': 'What is dharma?'})
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(response.get_json()['error'], 'Provider unavailable.')
+        provider.assert_called_once()
+
+    def test_search_returns_content(self):
+        response = self.client.get('/api/search?q=krishna')
+        self.assertEqual(response.status_code, 200)
+        data = response.get_json()
+        self.assertGreaterEqual(len(data['results']), 1)
+
+    def test_learning_summary_handles_missing_data(self):
+        response = self.client.get('/api/learning/summary?student_id=empty-student')
+        self.assertEqual(response.status_code, 200)
+        data = response.get_json()
+        self.assertEqual(data['status'], 'no-data')
+
+    def test_learning_record_ingestion_and_summary_use_saved_records(self):
+        for record in (
+            {'topic': 'Bhagavad Gita', 'score': 90, 'status': 'completed', 'activity_type': 'quiz'},
+            {'topic': 'Dharma', 'score': 40, 'status': 'in_progress', 'focus_area': 'Duty'},
+        ):
+            response = self.client.post('/api/learning/records', json={
+                'student_id': 'student-a', **record,
+            })
+            self.assertEqual(response.status_code, 201)
+
+        summary = self.client.get('/api/learning/summary?student_id=student-a').get_json()
+        self.assertEqual(summary['progress']['completed_topics'], 1)
+        self.assertEqual(summary['progress']['in_progress'], 1)
+        self.assertEqual(summary['progress']['total_topics'], 2)
+        self.assertEqual(summary['progress']['average_score'], 65.0)
+        self.assertEqual(summary['strengths'], [{'topic': 'Bhagavad Gita', 'score': 90.0}])
+        self.assertEqual(summary['improvement_areas'], [{'topic': 'Dharma', 'score': 40.0}])
+        self.assertEqual(summary['recommendations'][0]['title'], 'Revisit Dharma')
+
+    def test_learning_record_rejects_invalid_score(self):
+        response = self.client.post('/api/learning/records', json={
+            'student_id': 'student-a', 'topic': 'Dharma', 'score': 101, 'status': 'completed',
+        })
+        self.assertEqual(response.status_code, 400)
+
+    def test_debate_creation(self):
+        payload = {
+            'topic': 'Was Arjuna right to hesitate?',
+            'mode': 'student-vs-ai',
+            'created_by': 'demo-student',
+            'age_group': '13-15',
+            'position': 'for'
+        }
+        response = self.client.post('/api/debate/create', json=payload)
+        self.assertEqual(response.status_code, 201)
+        data = response.get_json()
+        self.assertIn('debate', data)
+        self.assertEqual(data['debate']['mode'], 'student-vs-ai')
+
+    def test_student_debate_join_argument_and_persistence(self):
+        created = self.client.post('/api/debate/create', json={
+            'topic': 'Should Arjuna have paused?',
+            'mode': 'student-vs-student',
+            'created_by': 'student-a',
+            'position': 'for',
+        })
+        debate_id = created.get_json()['debate']['id']
+        joined = self.client.post(f'/api/debate/{debate_id}/join', json={'student_id': 'student-b'})
+        self.assertEqual(joined.status_code, 200)
+
+        rejected = self.client.post(f'/api/debate/{debate_id}/arguments', json={
+            'student_id': 'outsider', 'argument': 'Not a participant.',
+        })
+        self.assertEqual(rejected.status_code, 403)
+        self.client.post(f'/api/debate/{debate_id}/ready', json={'student_id': 'student-a'})
+        self.client.post(f'/api/debate/{debate_id}/ready', json={'student_id': 'student-b'})
+        submitted = self.client.post(f'/api/debate/{debate_id}/arguments', json={
+            'student_id': 'student-b', 'argument': 'Pausing helps consider consequences.',
+        })
+        self.assertEqual(submitted.status_code, 201)
+
+        restarted_client = app.app.test_client()
+        details = restarted_client.get(f'/api/debate/{debate_id}').get_json()
+        self.assertEqual(details['debate']['status'], 'in_progress')
+        self.assertEqual(len(details['participants']), 2)
+        self.assertEqual(details['arguments'][0]['argument'], 'Pausing helps consider consequences.')
+        completed = restarted_client.post(f'/api/debate/{debate_id}/complete', json={'student_id': 'student-a'})
+        self.assertEqual(completed.status_code, 200)
+        self.assertEqual(restarted_client.get(f'/api/debate/{debate_id}').get_json()['debate']['status'], 'completed')
+
+    def test_debate_database_rejects_orphan_activity(self):
+        with app.get_db_connection() as connection:
+            with self.assertRaises(sqlite3.IntegrityError):
+                connection.execute(
+                    'INSERT INTO debate_arguments (debate_id, speaker, argument) VALUES (?, ?, ?)',
+                    (999999, 'student-a', 'Orphan argument'),
+                )
+
+    def test_debate_persists_after_application_process_restart(self):
+        database_path = os.path.join(self.temp_directory.name, 'restart.db')
+        environment = os.environ.copy()
+        environment['DATABASE_PATH'] = database_path
+        environment['GEMINI_API_KEY'] = ''
+        create_script = (
+            "import app; client=app.app.test_client(); "
+            "created=client.post('/api/debate/create', json={'topic':'Persistence check','mode':'student-vs-student','created_by':'student-a','position':'for'}); "
+            "debate_id=created.get_json()['debate']['id']; "
+            "client.post(f'/api/debate/{debate_id}/join', json={'student_id':'student-b'}); "
+            "client.post(f'/api/debate/{debate_id}/ready', json={'student_id':'student-a'}); "
+            "client.post(f'/api/debate/{debate_id}/ready', json={'student_id':'student-b'}); "
+            "client.post(f'/api/debate/{debate_id}/arguments', json={'student_id':'student-a','argument':'Saved before restart.'}); "
+            "print(debate_id)"
+        )
+        created = subprocess.run(
+            [sys.executable, '-c', create_script], env=environment,
+            capture_output=True, text=True, check=True,
+        )
+        debate_id = created.stdout.strip().splitlines()[-1]
+        verify_script = (
+            "import app; client=app.app.test_client(); "
+            f"detail=client.get('/api/debate/{debate_id}').get_json(); "
+            "assert detail['debate']['status']=='in_progress'; "
+            "assert detail['arguments'][0]['argument']=='Saved before restart.'; "
+            "print('persisted')"
+        )
+        verified = subprocess.run(
+            [sys.executable, '-c', verify_script], env=environment,
+            capture_output=True, text=True, check=True,
+        )
+        self.assertIn('persisted', verified.stdout)
+
+    def test_ai_debate_never_records_a_fake_ai_response(self):
+        created = self.client.post('/api/debate/create', json={
+            'topic': 'Was Arjuna right to hesitate?', 'mode': 'student-vs-ai', 'created_by': 'student-a',
+        }).get_json()['debate']
+        self.client.post(f'/api/debate/{created["id"]}/ready', json={'student_id': 'student-a'})
+        with patch.dict(os.environ, {'GEMINI_API_KEY': ''}), patch.object(app, 'GEMINI_API_KEY', None):
+            response = self.client.post(f"/api/debate/{created['id']}/arguments", json={
+                'student_id': 'student-a', 'argument': 'A pause can prevent harmful action.',
+            })
+        self.assertEqual(response.status_code, 503)
+        self.assertTrue(response.get_json()['argument_saved'] is False or 'argument_saved' in response.get_json())
+        details = self.client.get(f"/api/debate/{created['id']}").get_json()
+        self.assertEqual([item['speaker'] for item in details['arguments']], [])
+        self.assertTrue(any(item['role'] == 'ai' for item in details['participants']))
+        self.assertEqual(details['debate']['status'], 'in_progress')
+
+    @patch('app.generate_gemini_response', return_value={
+        'answer': 'Arjuna’s pause can be understood as reflection before action.',
+        'provider': 'gemini',
+        'age_group': '9-12',
+    })
+    @patch('app.generate_gemini_structured_response')
+    def test_ai_debate_saves_only_actual_provider_turns(self, structured, provider):
+        structured.return_value = {
+            'scorecards': [
+                {
+                    'participant_key': 'A',
+                    'relevance': 9, 'reasoning': 9, 'evidence': 8, 'clarity': 9, 'rebuttal': 8, 'respect': 10,
+                    'explanation': 'Solid opening.',
+                    'strengths': ['Clear reasoning'],
+                    'improvements': ['Add more evidence']
+                },
+                {
+                    'participant_key': 'B',
+                    'relevance': 9, 'reasoning': 9, 'evidence': 8, 'clarity': 9, 'rebuttal': 8, 'respect': 10,
+                    'explanation': 'Thoughtful response.',
+                    'strengths': ['Contextual'],
+                    'improvements': ['Tighten rebuttal']
+                }
+            ],
+            'summary': 'Round 1 was well-argued by both sides.'
+        }
+        debate = self.client.post('/api/debate/create', json={
+            'topic': 'Was Arjuna right to hesitate?', 'mode': 'student-vs-ai', 'created_by': 'student-a',
+        }).get_json()['debate']
+        self.client.post(f'/api/debate/{debate["id"]}/ready', json={'student_id': 'student-a'})
+        response = self.client.post(f"/api/debate/{debate['id']}/arguments", json={
+            'student_id': 'student-a', 'argument': 'Taking time to think can reduce harm.',
+        })
+        self.assertEqual(response.status_code, 201)
+        self.assertIn('ai_response', response.get_json())
+        details = self.client.get(f"/api/debate/{debate['id']}").get_json()
+        self.assertEqual(details['debate']['status'], 'in_progress')
+        self.assertEqual(len([item for item in details['arguments'] if item['speaker'] in ['student-a', 'ai-opponent']]), 2)
+        self.assertTrue(any(item['role'] == 'ai' for item in details['participants']))
+        provider.assert_called()
+
+
+if __name__ == '__main__':
+    unittest.main()

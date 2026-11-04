@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block title %}Learning Intelligence | MythoVerse{% endblock %}
+
+{% block content %}
+<div class="learning-dashboard">
+<section class="page-header panel">
+  <div>
+    <p class="eyebrow accent">Module B</p>
+    <h2>Learning Intelligence</h2>
+  </div>
+  <form id="search-learning" class="inline-form">
+    <input type="text" id="search-input" placeholder="Search myth topics, stories, or concepts" />
+    <button type="submit" class="button primary">Search</button>
+  </form>
+  <label class="learning-age-selector">Learner age
+    <select id="learning-age-group">
+      <option value="6-8">6–8</option>
+      <option value="9-12">9–12</option>
+      <option value="13-15" selected>13–15</option>
+      <option value="16-18">16–18</option>
+      <option value="18+">18+</option>
+    </select>
+  </label>
+</section>
+
+<section class="stats-grid learning-stats">
+  <article class="stat-card panel">
+    <p class="eyebrow">Progress</p>
+    <h3 id="progress-overview">--</h3>
+    <small id="progress-details">No learning data yet.</small>
+  </article>
+  <article class="stat-card panel">
+    <p class="eyebrow">Strong topics</p>
+    <h3 id="strength-summary">--</h3>
+    <small id="strength-details">No reliable scores recorded yet.</small>
+  </article>
+  <article class="stat-card panel">
+    <p class="eyebrow">Needs practice</p>
+    <h3 id="improvement-summary">--</h3>
+    <small id="improvement-details">No targets available yet.</small>
+  </article>
+  <article class="stat-card panel">
+    <p class="eyebrow">Lessons completed</p>
+    <h3 id="lessons-completed">--</h3>
+    <small>Recorded lesson activity</small>
+  </article>
+  <article class="stat-card panel">
+    <p class="eyebrow">Quizzes attempted</p>
+    <h3 id="quizzes-attempted">--</h3>
+    <small id="questions-attempted">No questions attempted yet.</small>
+  </article>
+  <article class="stat-card panel">
+    <p class="eyebrow">Average score</p>
+    <h3 id="average-quiz-score">--</h3>
+    <small id="streak-details">Learning streak: not enough activity</small>
+  </article>
+</section>
+
+<section class="insight-grid">
+  <div class="panel">
+    <h3>Strengths</h3>
+    <ul id="strength-list" class="items-list"></ul>
+  </div>
+  <div class="panel">
+    <h3>Areas to improve</h3>
+    <ul id="improvement-list" class="items-list"></ul>
+  </div>
+</section>
+
+<section class="learning-highlight-grid">
+  <article class="panel learning-highlight-card">
+    <p class="eyebrow">Strongest mythology topic</p>
+    <h3 id="strongest-topic">Not enough data</h3>
+    <p id="strongest-topic-details">Complete at least two questions in a topic to receive a reliable classification.</p>
+  </article>
+  <article class="panel learning-highlight-card">
+    <p class="eyebrow">Topic requiring improvement</p>
+    <h3 id="weakest-topic">Not enough data</h3>
+    <p id="weakest-topic-details">Your dashboard will identify a weak area only from question-level results.</p>
+  </article>
+</section>
+
+<section class="panel learning-topic-panel">
+  <div class="page-header compact-header">
+    <div>
+      <p class="eyebrow accent">Evidence-based analysis</p>
+      <h3>Topic performance</h3>
+    </div>
+    <span id="adaptive-difficulty" class="learning-badge">Next quiz: medium</span>
+  </div>
+  <div class="learning-table-wrap">
+    <table class="learning-topic-table">
+      <thead>
+        <tr><th>Topic</th><th>Questions</th><th>Correct</th><th>Accuracy</th><th>Level</th><th>Trend</th></tr>
+      </thead>
+      <tbody id="topic-performance-list"></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <h3>Recommended next steps</h3>
+  <ul id="recommendations-list" class="items-list"></ul>
+</section>
+
+<section class="learning-two-column">
+  <section class="panel">
+    <div class="page-header compact-header">
+      <div><p class="eyebrow accent">Personalized revision</p><h3>Revision planner</h3></div>
+    </div>
+    <ul id="revision-list" class="items-list"></ul>
+  </section>
+  <section class="panel">
+    <div class="page-header compact-header">
+      <div><p class="eyebrow accent">Actual activity</p><h3>Recent learning history</h3></div>
+    </div>
+    <ul id="history-list" class="items-list"></ul>
+  </section>
+</section>
+
+<section class="panel learning-quiz-panel">
+  <div class="page-header compact-header">
+    <div><p class="eyebrow accent">Adaptive practice</p><h3>Practice quiz</h3></div>
+    <button id="start-learning-quiz" type="button" class="button primary">Start adaptive quiz</button>
+  </div>
+  <p id="quiz-difficulty-note">The next quiz level will be chosen from your recent question-level results.</p>
+  <form id="learning-quiz-form" class="learning-quiz-form" hidden></form>
+  <div id="learning-quiz-result" class="learning-quiz-result" role="status" aria-live="polite"></div>
+</section>
+
+<section class="panel search-results-panel">
+  <h3>Smart search results</h3>
+  <div id="search-results" class="search-results"></div>
+  <p id="learning-status" role="status" aria-live="polite"></p>
+</section>
+</div>
+{% endblock %}

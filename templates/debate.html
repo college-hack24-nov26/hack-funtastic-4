@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Debate Sabha | MythoVerse{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='debate.css', v='20261104-3') }}" />
+<div class="debate-sabha-page">
+  <section class="debate-sabha-hero">
+    <div class="debate-hero-ornament" aria-hidden="true">&#x0950;</div>
+    <div>
+      <p class="eyebrow accent">MythoVerse Shastrarth</p>
+      <h2>Debate Sabha</h2>
+      <p>Enter a respectful space for reasoning, evidence, and reflection. Take a position on a question from Indian epics and test it across a three-round dialogue.</p>
+    </div>
+    <div class="debate-sabha-principles"><span>Evidence</span><span>Dharma</span><span>Dialogue</span></div>
+  </section>
+
+  <section class="debate-entry-layout" aria-label="Start a debate">
+    <div class="debate-entry-main">
+      <div class="debate-section-intro"><p class="eyebrow accent">01 / Choose your question</p><h3>Which idea will you defend?</h3><p>These prompts are grounded in topics available to the local mythology knowledge base. Choose a card or write your own.</p></div>
+      <div class="debate-topic-grid" id="debate-topic-grid">
+        <button type="button" class="debate-topic-card is-selected" data-topic="Was Arjuna right to hesitate before the Kurukshetra war?"><span>Epic dilemma</span><strong>Arjuna's hesitation</strong><small>Duty, compassion, and the cost of action.</small></button>
+        <button type="button" class="debate-topic-card" data-topic="Is Dharma always dependent on circumstances?"><span>Philosophy</span><strong>Dharma and circumstance</strong><small>Can right action change with context?</small></button>
+        <button type="button" class="debate-topic-card" data-topic="Was Karna treated fairly?"><span>Mahabharata</span><strong>Karna's fairness</strong><small>Birth, loyalty, exclusion, and choice.</small></button>
+        <button type="button" class="debate-topic-card" data-topic="Can forgiveness be stronger than revenge?"><span>Values</span><strong>Forgiveness or revenge</strong><small>What makes a response truly strong?</small></button>
+        <button type="button" class="debate-topic-card" data-topic="Is devotion more important than knowledge?"><span>Wisdom</span><strong>Devotion and knowledge</strong><small>Two paths, one question of the heart.</small></button>
+        <button type="button" class="debate-topic-card" data-topic="Should duty always come before personal relationships?"><span>Dharma</span><strong>Duty and relationships</strong><small>When obligations pull in different directions.</small></button>
+      </div>
+      <label class="debate-custom-topic">Or shape your own statement
+        <input id="debate-topic-custom" type="text" maxlength="200" placeholder="Write a mythology debate statement..." />
+      </label>
+    </div>
+
+    <aside class="debate-entry-card">
+      <div class="debate-entry-card-heading"><span class="debate-step-number">02</span><div><p class="eyebrow accent">Set the terms</p><h3>Your stance</h3></div></div>
+      <form id="create-debate-form" class="debate-entry-form">
+        <input id="debate-topic" type="hidden" name="topic" value="" />
+        <label>Debate mode
+          <select name="mode"><option value="student-vs-ai">Dataset practice opponent</option><option value="student-vs-llm">LLM debate opponent</option><option value="student-vs-student">Human partner</option></select>
+        </label>
+        <label>Difficulty
+          <select name="difficulty"><option value="beginner">Beginner · guided</option><option value="intermediate" selected>Intermediate · balanced</option><option value="advanced">Advanced · rigorous</option></select>
+        </label>
+        <label>Age group
+          <select name="age_group"><option value="6-8">6–8 years</option><option value="9-12" selected>9–12 years</option><option value="13-15">13–15 years</option><option value="16-18">16–18 years</option><option value="18+">18+ years</option></select>
+        </label>
+        <fieldset class="debate-position-fieldset"><legend>Your position</legend><div class="debate-position-options"><label><input type="radio" name="position" value="for" checked /><span>Support</span></label><label><input type="radio" name="position" value="against" /><span>Oppose</span></label></div></fieldset>
+        <button class="button primary debate-start-button" type="submit">Begin Shastrarth <span aria-hidden="true">&rarr;</span></button>
+        <p id="debate-status" role="status" aria-live="polite">Select a prompt above or write your own statement, then begin.</p>
+      </form>
+    </aside>
+  </section>
+
+  <section class="debate-history-section">
+            <div class="debate-history-heading"><div><p class="eyebrow accent">Your sabha record</p><h3>Debate history</h3></div><span>Continue or revisit an exchange</span></div>
+    <div id="debate-list" class="debate-history-grid"></div>
+  </section>
+
+  <section id="debate-workspace" class="debate-workspace" aria-live="polite" hidden></section>
+</div>
+{% endblock %}
