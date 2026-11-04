@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Announcements | MythoVerse Admin</title>
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <script src="/assets/js/auth-client.js" defer></script>
+    <script src="/assets/js/admin-announcements.js" defer></script>
+  </head>
+  <body class="admin-body">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <main id="main-content" class="page-main">
+      <div class="container admin-content">
+        <a class="button button-quiet" href="/admin/dashboard.html">Back to admin dashboard</a>
+        <p class="eyebrow">Admin content</p>
+        <h1>Announcements</h1>
+        <p class="form-status" data-announcement-status role="status" aria-live="polite">Verifying administrator access…</p>
+        <section data-announcement-content hidden>
+          <section class="dashboard-section" aria-labelledby="announcement-editor-title">
+            <h2 id="announcement-editor-title">Create or edit announcement</h2>
+            <form data-announcement-form class="form-card card">
+              <label class="form-label" for="announcement-title">Title</label>
+              <input class="form-control" id="announcement-title" name="title" minlength="3" maxlength="180" required>
+              <label class="form-label" for="announcement-category">Category</label>
+              <input class="form-control" id="announcement-category" name="category" minlength="2" maxlength="60" required>
+              <label class="form-label" for="announcement-description">Description</label>
+              <textarea class="form-control" id="announcement-description" name="description" minlength="5" maxlength="4000" rows="5" required></textarea>
+              <label class="form-label"><input type="checkbox" name="important"> Mark as important</label>
+              <div class="form-actions"><button class="button button-primary" type="submit" data-announcement-save>Save draft</button><button class="button button-quiet" type="button" data-announcement-reset>New announcement</button></div>
+            </form>
+            <p class="form-status" data-announcement-feedback role="status" aria-live="polite" hidden></p>
+          </section>
+          <section class="dashboard-section" aria-labelledby="announcement-list-title">
+            <div class="dashboard-section-heading"><h2 id="announcement-list-title">Saved announcements</h2><label class="form-label">Show <select class="form-control" data-announcement-filter><option value="all">All</option><option value="draft">Drafts</option><option value="published">Published</option></select></label></div>
+            <div data-announcement-list></div>
+          </section>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

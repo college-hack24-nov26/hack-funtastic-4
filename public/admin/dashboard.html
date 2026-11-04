@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="MythoVerse administrator dashboard.">
+    <title>Admin Dashboard | MythoVerse</title>
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <script src="/assets/js/auth-client.js" defer></script>
+    <script src="/assets/js/admin-dashboard.js" defer></script>
+  </head>
+  <body class="admin-body">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="admin-layout" id="admin-layout">
+      <aside class="admin-sidebar" id="admin-sidebar" aria-label="Admin sidebar">
+        <a class="brand admin-brand" href="/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true">M</span>
+          <span>MythoVerse <small>Admin</small></span>
+        </a>
+        <nav class="admin-navigation" aria-label="Admin navigation">
+          <a class="admin-nav-link" href="#dashboard-overview" aria-current="page">Dashboard</a>
+          <a class="admin-nav-link" href="#student-management">Student Management</a>
+          <a class="admin-nav-link" href="#teacher-management">Teacher Management</a>
+          <a class="admin-nav-link" href="#content-management">Content Management</a>
+          <a class="admin-nav-link" href="#reports">Reports</a>
+          <a class="admin-nav-link" href="#settings">Settings</a>
+          <button class="admin-nav-link admin-nav-logout" type="button" data-admin-logout>Log out</button>
+        </nav>
+      </aside>
+
+      <div class="admin-main-column">
+        <header class="admin-topbar">
+          <button
+            class="menu-toggle admin-menu-toggle"
+            type="button"
+            aria-controls="admin-sidebar"
+            aria-expanded="false"
+            aria-label="Open admin navigation"
+            data-admin-menu-toggle
+          >
+            <span class="menu-icon" aria-hidden="true"></span>
+          </button>
+          <a class="brand admin-mobile-brand" href="/admin/dashboard.html">
+            <span class="brand-mark" aria-hidden="true">M</span>
+            <span>MythoVerse Admin</span>
+          </a>
+          <div class="admin-identity">
+            <span class="admin-display-name" data-admin-display-name></span>
+            <span class="badge">Administrator</span>
+            <button class="button button-quiet" type="button" data-admin-logout>Log out</button>
+          </div>
+        </header>
+
+        <main class="admin-main" id="main-content">
+          <div class="container admin-content">
+            <p class="form-status admin-page-status" id="admin-page-status" role="status" aria-live="polite">
+              Verifying administrator access…
+            </p>
+
+            <div id="admin-dashboard-content" hidden>
+              <section id="dashboard-overview" aria-labelledby="admin-dashboard-title">
+                <p class="eyebrow">MythoVerse administration</p>
+                <h1 id="admin-dashboard-title">Dashboard overview</h1>
+                <p class="admin-intro">A high-level view of the platform. Unavailable data is shown explicitly rather than estimated.</p>
+
+                <div class="admin-summary-grid" aria-label="Platform summary">
+                  <article class="admin-summary-card card">
+                    <h2>Total Students</h2>
+                    <p class="admin-summary-value" data-summary-count="totalStudents" aria-live="polite">Loading…</p>
+                    <p class="admin-summary-note" data-summary-note="totalStudents">Account records</p>
+                  </article>
+                  <article class="admin-summary-card card">
+                    <h2>Total Teachers</h2>
+                    <p class="admin-summary-value" data-summary-count="totalTeachers" aria-live="polite">Loading…</p>
+                    <p class="admin-summary-note" data-summary-note="totalTeachers">Account records</p>
+                  </article>
+                  <article class="admin-summary-card card">
+                    <h2>Total Stories</h2>
+                    <p class="admin-summary-value" data-story-stat="total" aria-live="polite">Loading…</p>
+                    <p class="admin-summary-note">All story records</p>
+                  </article>
+                  <article class="admin-summary-card card">
+                    <h2>Published Stories</h2>
+                    <p class="admin-summary-value" data-story-stat="published" aria-live="polite">Loading…</p>
+                    <p class="admin-summary-note">Available to students</p>
+                  </article>
+                  <article class="admin-summary-card card">
+                    <h2>Draft Stories</h2>
+                    <p class="admin-summary-value" data-story-stat="draft" aria-live="polite">Loading…</p>
+                    <p class="admin-summary-note">Not visible to students</p>
+                  </article>
+                </div>
+              </section>
+
+              <section class="admin-placeholder-grid" aria-label="Future admin modules">
+                <article class="panel admin-placeholder" id="student-management">
+                  <h2>Student Management</h2>
+                  <p>This area is reserved for a future student-management module.</p>
+                </article>
+                <article class="panel admin-placeholder" id="teacher-management">
+                  <p class="eyebrow">Teacher authoring</p>
+                  <h2>Manage teacher learning paths</h2>
+                  <p>Create teacher profiles, age-specific syllabuses, lessons, and assessments as structured content.</p>
+                  <a class="button button-secondary" href="/admin/teachers.html">Open teacher management</a>
+                </article>
+                <article class="panel admin-placeholder" id="content-management">
+                  <p class="eyebrow">Story authoring</p>
+                  <h2>Manage learning stories</h2>
+                  <p>Create stories, arrange chapters and lessons, and control publication.</p>
+                  <a class="button button-secondary admin-story-management-link" href="/admin/stories.html">Open story management</a>
+                  <a class="button button-secondary" href="/admin/announcements.html">Manage announcements</a>
+                </article>
+                <article class="panel admin-placeholder" id="reports">
+                  <h2>Reports</h2>
+                  <p>Reports are unavailable until a reporting data source is connected.</p>
+                </article>
+                <article class="panel admin-placeholder" id="settings">
+                  <h2>Settings</h2>
+                  <p>Admin settings are reserved for a future module.</p>
+                </article>
+              </section>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

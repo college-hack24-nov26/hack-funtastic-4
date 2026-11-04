@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Meet the MythoVerse teachers and explore age-adaptive learning paths.">
+    <title>My Teachers | MythoVerse</title>
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <script src="/assets/js/auth-client.js" defer></script>
+    <script src="/assets/js/main.js" defer></script>
+    <script src="/assets/js/teachers-directory.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-component="header"></div>
+    <main id="main-content" class="page-main teacher-page">
+      <section class="teacher-hero container">
+        <p class="eyebrow">The Gurukul</p>
+        <h1>Meet your teachers</h1>
+        <p>Explore distinct paths through values, devotion, language, mathematics, wisdom, and the nature of matter.</p>
+      </section>
+      <section class="container teacher-directory-section" aria-labelledby="teacher-directory-title">
+        <div class="teacher-section-heading"><div><p class="eyebrow">Guides for the journey</p><h2 id="teacher-directory-title">My Teachers</h2></div></div>
+        <p class="form-status" data-teachers-status role="status" aria-live="polite">Loading teachers…</p>
+        <div class="teacher-card-grid" data-teachers-grid hidden></div>
+      </section>
+    </main>
+    <div data-component="footer"></div>
+  </body>
+</html>

@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Create a MythoVerse student account to join the upcoming mythology-inspired learning platform."
+    >
+    <title>Create an Account | MythoVerse</title>
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <script src="/assets/js/auth-client.js" defer></script>
+    <script src="/assets/js/main.js" defer></script>
+    <script src="/assets/js/register.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-component="header"></div>
+
+    <main id="main-content" class="page-main auth-page">
+      <section class="auth-card card" aria-labelledby="registration-title">
+        <div class="auth-heading">
+          <p class="eyebrow">Start your learning journey</p>
+          <h1 id="registration-title">Create a student account</h1>
+          <p class="muted">
+            Set up your account for MythoVerse. Your account role is always
+            student; it cannot be selected here.
+          </p>
+        </div>
+
+        <form id="registration-form" class="auth-form" novalidate>
+          <div class="form-field">
+            <label class="form-label" for="register-display-name">Display name</label>
+            <input
+              class="form-control"
+              id="register-display-name"
+              name="displayName"
+              type="text"
+              autocomplete="name"
+              required
+              minlength="2"
+              maxlength="80"
+              aria-describedby="register-display-name-error"
+            >
+            <p class="form-error" id="register-display-name-error" hidden></p>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="register-email">Email</label>
+            <input
+              class="form-control"
+              id="register-email"
+              name="email"
+              type="email"
+              autocomplete="email"
+              inputmode="email"
+              maxlength="254"
+              required
+              aria-describedby="register-email-error"
+            >
+            <p class="form-error" id="register-email-error" hidden></p>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="register-password">Password</label>
+            <div class="password-control">
+              <input
+                class="form-control"
+                id="register-password"
+                name="password"
+                type="password"
+                autocomplete="new-password"
+                minlength="8"
+                required
+                aria-describedby="register-password-hint register-password-error"
+              >
+              <button
+                class="password-toggle"
+                type="button"
+                data-toggle-password="register-password"
+                aria-controls="register-password"
+                aria-pressed="false"
+              >Show</button>
+            </div>
+            <p class="form-hint" id="register-password-hint">Use at least 8 characters (up to 72 bytes). Passwords are never stored in your browser.</p>
+            <p class="form-error" id="register-password-error" hidden></p>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="register-password-confirm">Confirm password</label>
+            <div class="password-control">
+              <input
+                class="form-control"
+                id="register-password-confirm"
+                name="passwordConfirmation"
+                type="password"
+                autocomplete="new-password"
+                required
+                aria-describedby="register-password-confirm-error"
+              >
+              <button
+                class="password-toggle"
+                type="button"
+                data-toggle-password="register-password-confirm"
+                aria-controls="register-password-confirm"
+                aria-pressed="false"
+              >Show</button>
+            </div>
+            <p class="form-error" id="register-password-confirm-error" hidden></p>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="register-age-group">Age group</label>
+            <select
+              class="form-control"
+              id="register-age-group"
+              name="ageGroup"
+              autocomplete="off"
+              required
+              aria-describedby="register-age-group-error"
+            >
+              <option value="">Choose an age group</option>
+              <option value="6-8">6–8</option>
+              <option value="9-12">9–12</option>
+              <option value="13-15">13–15</option>
+              <option value="16-18">16–18</option>
+              <option value="18+">18+</option>
+            </select>
+            <p class="form-error" id="register-age-group-error" hidden></p>
+          </div>
+
+          <fieldset class="terms-fieldset">
+            <legend class="visually-hidden">Terms acknowledgement</legend>
+            <div class="terms-check">
+              <input
+                id="register-terms"
+                name="termsAcknowledged"
+                type="checkbox"
+                required
+                aria-describedby="register-terms-description register-terms-error"
+              >
+              <label for="register-terms">
+                I have read and agree to the <a href="#account-terms">account terms</a>.
+              </label>
+            </div>
+            <p class="form-hint" id="register-terms-description">
+              This acknowledgement is not persisted by the current API.
+            </p>
+            <p class="form-error" id="register-terms-error" hidden></p>
+          </fieldset>
+
+          <div class="account-terms" id="account-terms" tabindex="-1">
+            <h2>Account terms</h2>
+            <p>
+              Use your account for learning and provide information you are
+              authorized to share. Do not misuse the service or attempt to
+              access another person’s account. MythoVerse is still in
+              development; these brief account terms are not a substitute for
+              the full terms and privacy information that will be provided
+              before launch.
+            </p>
+          </div>
+
+          <p class="form-status" id="registration-status" role="status" aria-live="polite"></p>
+          <a class="button button-secondary auth-success-link" data-registration-login href="/login.html" hidden>Continue to login</a>
+          <button class="button button-primary auth-submit" type="submit">Create account</button>
+        </form>
+
+        <p class="auth-alternate">
+          Already have an account? <a href="/login.html">Log in</a>
+        </p>
+      </section>
+    </main>
+
+    <div data-component="footer"></div>
+  </body>
+</html>

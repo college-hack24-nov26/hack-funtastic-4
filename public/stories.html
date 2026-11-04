@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Browse published MythoVerse learning stories.">
+    <title>Story Library | MythoVerse</title>
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <script src="/assets/js/auth-client.js" defer></script>
+    <script src="/assets/js/main.js" defer></script>
+    <script src="/assets/js/stories.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-component="header"></div>
+    <main class="page-main student-page story-library-page" id="main-content">
+      <div class="container">
+        <section class="story-library-heading" aria-labelledby="stories-title">
+          <div>
+            <p class="eyebrow">A library of ideas and journeys</p>
+            <h1 id="stories-title">Story Library</h1>
+            <p class="story-library-intro">Explore published stories, read at your own pace, and return whenever curiosity calls.</p>
+          </div>
+          <a class="button button-quiet" href="/dashboard.html">Back to dashboard</a>
+        </section>
+
+        <section class="story-filter-panel panel" aria-label="Filter stories">
+          <div class="story-filter-grid">
+            <div class="form-field">
+              <label for="story-search">Search stories</label>
+              <input class="form-control" id="story-search" type="search" autocomplete="off" placeholder="Search by title">
+            </div>
+            <div class="form-field">
+              <label for="story-category">Category</label>
+              <select class="form-control" id="story-category"><option value="">All categories</option></select>
+            </div>
+            <div class="form-field">
+              <label for="story-age-group">Age group</label>
+              <select class="form-control" id="story-age-group"></select>
+            </div>
+            <div class="form-field">
+              <label for="story-difficulty">Difficulty</label>
+              <select class="form-control" id="story-difficulty">
+                <option value="">All levels</option>
+                <option value="introductory">Introductory</option>
+                <option value="developing">Developing</option>
+                <option value="advanced">Advanced</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <p id="story-library-status" class="form-status story-library-status" role="status" aria-live="polite">Loading published stories…</p>
+        <div id="story-library-grid" class="story-card-grid" aria-label="Published stories" hidden></div>
+        <nav class="story-pagination" aria-label="Story pages" hidden>
+          <button class="button button-quiet" id="story-page-previous" type="button">Previous</button>
+          <span id="story-page-label" aria-live="polite"></span>
+          <button class="button button-quiet" id="story-page-next" type="button">Next</button>
+        </nav>
+      </div>
+    </main>
+    <div data-component="footer"></div>
+  </body>
+</html>

@@ -1,0 +1,28 @@
+{
+  "name": "mythoverse",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MythoVerse project foundation",
+  "main": "server/src/server.js",
+  "scripts": {
+    "start": "node server/src/server.js",
+    "admin:provision": "node server/scripts/provisionFirstAdmin.js",
+    "admin:change-password": "node server/scripts/changeAdminPassword.js",
+    "student:change-password": "node server/scripts/changeStudentPassword.js",
+    "teachers:seed": "node server/scripts/seedTeacherProfiles.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.7.3",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.9.5",
+    "nodemailer": "^10.3.1"
+  }
+}

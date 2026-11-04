@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Create and manage MythoVerse learning stories.">
+    <title>Story Management | MythoVerse Admin</title>
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <script src="/assets/js/auth-client.js" defer></script>
+    <script src="/assets/js/admin-stories.js" defer></script>
+  </head>
+  <body class="admin-body">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="admin-layout" id="admin-layout">
+      <aside class="admin-sidebar" id="admin-sidebar" aria-label="Admin sidebar">
+        <a class="brand admin-brand" href="/admin/dashboard.html">
+          <span class="brand-mark" aria-hidden="true">M</span>
+          <span>MythoVerse <small>Admin</small></span>
+        </a>
+        <nav class="admin-navigation" aria-label="Admin navigation">
+          <a class="admin-nav-link" href="/admin/dashboard.html">Dashboard</a>
+          <a class="admin-nav-link" href="/admin/stories.html" aria-current="page">Story Management</a>
+          <button class="admin-nav-link admin-nav-logout" type="button" data-admin-logout>Log out</button>
+        </nav>
+      </aside>
+
+      <div class="admin-main-column">
+        <header class="admin-topbar">
+          <button class="menu-toggle admin-menu-toggle" type="button" aria-controls="admin-sidebar" aria-expanded="false" aria-label="Open admin navigation" data-admin-menu-toggle>
+            <span class="menu-icon" aria-hidden="true"></span>
+          </button>
+          <a class="brand admin-mobile-brand" href="/admin/dashboard.html">
+            <span class="brand-mark" aria-hidden="true">M</span>
+            <span>MythoVerse Admin</span>
+          </a>
+          <div class="admin-identity">
+            <span class="admin-display-name" data-admin-display-name></span>
+            <span class="badge">Administrator</span>
+            <button class="button button-quiet" type="button" data-admin-logout>Log out</button>
+          </div>
+        </header>
+
+        <main class="admin-main" id="main-content">
+          <div class="container admin-content admin-story-content">
+            <p id="admin-story-page-status" class="form-status admin-page-status" role="status" aria-live="polite">Verifying administrator access…</p>
+            <div id="admin-story-page" hidden>
+              <section class="admin-story-heading" aria-labelledby="story-management-title">
+                <div>
+                  <p class="eyebrow">Learning content</p>
+                  <h1 id="story-management-title">Story management</h1>
+                  <p class="admin-intro">Create stories, organize chapters and lessons, and manage publication for students.</p>
+                </div>
+                <button class="button button-primary" id="new-story-button" type="button">Create story</button>
+              </section>
+
+              <div class="admin-story-stats" aria-label="Story counts">
+                <article class="admin-story-stat card"><p class="eyebrow">All stories</p><p class="admin-summary-value" data-story-stat="total">—</p></article>
+                <article class="admin-story-stat card"><p class="eyebrow">Published</p><p class="admin-summary-value" data-story-stat="published">—</p></article>
+                <article class="admin-story-stat card"><p class="eyebrow">Drafts</p><p class="admin-summary-value" data-story-stat="draft">—</p></article>
+              </div>
+
+              <p id="admin-story-feedback" class="form-status admin-story-feedback" role="status" aria-live="polite" hidden></p>
+
+              <section class="admin-story-workspace" aria-label="Story management workspace">
+                <section class="admin-story-list-panel panel" aria-labelledby="story-list-title">
+                  <div class="admin-story-list-heading">
+                    <div>
+                      <p class="eyebrow">Content library</p>
+                      <h2 id="story-list-title">Stories</h2>
+                    </div>
+                  </div>
+                  <label class="form-field admin-story-search">
+                    <span class="form-label">Search by title or slug</span>
+                    <input class="form-control" id="story-search" type="search" maxlength="100" placeholder="Search stories">
+                  </label>
+                  <label class="form-field admin-story-filter">
+                    <span class="form-label">Publication status</span>
+                    <select class="form-control" id="story-status-filter">
+                      <option value="all">All statuses</option>
+                      <option value="draft">Draft</option>
+                      <option value="published">Published</option>
+                      <option value="archived">Archived</option>
+                    </select>
+                  </label>
+                  <p id="story-list-status" class="form-hint" role="status" aria-live="polite">Loading stories…</p>
+                  <div id="story-list" class="admin-story-list" aria-label="Story results"></div>
+                  <div class="admin-story-pagination">
+                    <button class="button button-quiet" id="story-page-previous" type="button" disabled>Previous</button>
+                    <span id="story-page-label" class="form-hint">Page 1</span>
+                    <button class="button button-quiet" id="story-page-next" type="button" disabled>Next</button>
+                  </div>
+                </section>
+
+                <section id="story-workbench" class="admin-story-workbench" aria-labelledby="story-editor-heading" hidden>
+                  <form id="story-form" class="card admin-story-form" novalidate>
+                    <div class="admin-story-editor-heading">
+                      <div>
+                        <p class="eyebrow">Story details</p>
+                        <h2 id="story-editor-heading">Create a story</h2>
+                      </div>
+                      <span id="story-status-badge" class="badge">Draft</span>
+                    </div>
+                    <p id="story-form-status" class="form-status" role="status" aria-live="polite" hidden></p>
+
+                    <div class="admin-story-form-grid">
+                      <div class="form-field admin-story-field-wide">
+                        <label class="form-label" for="story-title">Story title</label>
+                        <input class="form-control" id="story-title" name="title" type="text" minlength="2" maxlength="180" required>
+                      </div>
+                      <div class="form-field">
+                        <label class="form-label" for="story-slug">Slug</label>
+                        <input class="form-control" id="story-slug" name="slug" type="text" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxlength="180" required aria-describedby="story-slug-hint">
+                        <p class="form-hint" id="story-slug-hint">Lowercase letters, numbers, and single hyphens.</p>
+                      </div>
+                      <div class="form-field">
+                        <label class="form-label" for="story-category">Category</label>
+                        <input class="form-control" id="story-category" name="category" type="text" minlength="2" maxlength="80" required>
+                      </div>
+                      <div class="form-field admin-story-field-wide">
+                        <label class="form-label" for="story-short-description">Short description</label>
+                        <textarea class="form-control" id="story-short-description" name="shortDescription" minlength="5" maxlength="320" rows="2" required></textarea>
+                      </div>
+                      <div class="form-field admin-story-field-wide">
+                        <label class="form-label" for="story-full-description">Full description</label>
+                        <textarea class="form-control" id="story-full-description" name="fullDescription" minlength="10" maxlength="8000" rows="4" required></textarea>
+                      </div>
+                      <div class="form-field admin-story-field-wide">
+                        <label class="form-label" for="story-background">Mythological background</label>
+                        <textarea class="form-control" id="story-background" name="mythologicalBackground" minlength="10" maxlength="12000" rows="4" required></textarea>
+                      </div>
+                      <div class="form-field">
+                        <label class="form-label" for="story-cover-image">Cover image reference <span class="muted">(optional)</span></label>
+                        <input class="form-control" id="story-cover-image" name="coverImage" type="text" maxlength="500" aria-describedby="story-cover-hint">
+                        <p class="form-hint" id="story-cover-hint">Use an /assets/ path or an HTTP(S) URL.</p>
+                      </div>
+                      <div class="form-field">
+                        <label class="form-label" for="story-difficulty">Difficulty</label>
+                        <select class="form-control" id="story-difficulty" name="difficulty" required>
+                          <option value="">Choose difficulty</option>
+                          <option value="introductory">Introductory</option>
+                          <option value="developing">Developing</option>
+                          <option value="advanced">Advanced</option>
+                        </select>
+                      </div>
+                      <fieldset class="admin-story-age-groups">
+                        <legend class="form-label">Supported age groups</legend>
+                        <div class="admin-story-age-options">
+                          <label><input type="checkbox" name="ageGroups" value="6-8"> 6–8</label>
+                          <label><input type="checkbox" name="ageGroups" value="9-12"> 9–12</label>
+                          <label><input type="checkbox" name="ageGroups" value="13-15"> 13–15</label>
+                          <label><input type="checkbox" name="ageGroups" value="16-18"> 16–18</label>
+                          <label><input type="checkbox" name="ageGroups" value="18+"> 18+</label>
+                        </div>
+                      </fieldset>
+                      <div class="form-field">
+                        <label class="form-label" for="story-objectives">Learning objectives</label>
+                        <textarea class="form-control" id="story-objectives" name="learningObjectives" rows="4" required aria-describedby="story-objectives-hint"></textarea>
+                        <p class="form-hint" id="story-objectives-hint">One objective per line, up to 20.</p>
+                      </div>
+                      <div class="form-field">
+                        <label class="form-label" for="story-estimated-minutes">Estimated learning time (minutes)</label>
+                        <input class="form-control" id="story-estimated-minutes" name="estimatedMinutes" type="number" min="1" max="2400" step="1" value="30" required>
+                      </div>
+                      <div class="form-field">
+                        <span class="form-label">Publication status</span>
+                        <p class="admin-story-publication-note">New stories are saved as drafts. Publish after chapters and lessons are ready.</p>
+                      </div>
+                    </div>
+                    <div class="cluster admin-story-form-actions">
+                      <button class="button button-primary" id="story-save-button" type="submit">Save story</button>
+                      <button class="button button-quiet" id="story-cancel-button" type="button">Close editor</button>
+                      <button class="button button-secondary" id="story-publication-button" type="button" hidden>Publish story</button>
+                    </div>
+                  </form>
+
+                  <section id="story-chapter-manager" class="card admin-chapter-manager" aria-labelledby="chapter-manager-title" hidden>
+                    <div class="admin-story-editor-heading">
+                      <div>
+                        <p class="eyebrow">Story structure</p>
+                        <h2 id="chapter-manager-title">Chapters and lessons</h2>
+                      </div>
+                    </div>
+                    <p id="chapter-manager-hint" class="form-hint">Chapter and lesson order is controlled by each item’s order value. Published stories must have at least one lesson in every chapter.</p>
+                    <div id="chapter-list" class="admin-chapter-list"></div>
+                    <form id="new-chapter-form" class="admin-new-chapter-form" novalidate>
+                      <h3>Add a chapter</h3>
+                      <div class="admin-chapter-form-grid">
+                        <label class="form-field"><span class="form-label">Chapter title</span><input class="form-control" name="title" type="text" minlength="2" maxlength="160" required></label>
+                        <label class="form-field"><span class="form-label">Order</span><input class="form-control" name="order" type="number" min="1" step="1" required></label>
+                        <label class="form-field"><span class="form-label">Estimated minutes</span><input class="form-control" name="estimatedMinutes" type="number" min="1" max="1200" step="1" value="10" required></label>
+                        <label class="form-field admin-story-field-wide"><span class="form-label">Description</span><textarea class="form-control" name="summary" maxlength="1000" rows="2"></textarea></label>
+                      </div>
+                      <button class="button button-secondary" type="submit">Add chapter</button>
+                    </form>
+                  </section>
+                </section>
+
+                <div id="story-workbench-empty" class="panel admin-story-workbench-empty">
+                  <p class="eyebrow">Select a story</p>
+                  <h2>Story details will appear here</h2>
+                  <p>Choose a story from the library or create a new one to begin authoring.</p>
+                </div>
+              </section>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

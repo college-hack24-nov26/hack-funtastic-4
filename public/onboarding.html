@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Set up your MythoVerse student profile and learning preferences.">
+    <title>Welcome | MythoVerse</title>
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <script src="/assets/js/auth-client.js" defer></script>
+    <script src="/assets/js/main.js" defer></script>
+    <script src="/assets/js/student-page.js" defer></script>
+    <script src="/assets/js/onboarding.js" defer></script>
+  </head>
+  <body data-student-page="onboarding">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-component="header"></div>
+
+    <main id="main-content" class="page-main student-page">
+      <div id="student-page-status" class="container form-status student-page-status" role="status" aria-live="polite">
+        Checking your sign-in and profile…
+      </div>
+
+      <section data-student-page-content class="container onboarding-shell" aria-labelledby="onboarding-title" hidden>
+        <div class="onboarding-heading">
+          <p class="eyebrow">Your first steps</p>
+          <h1 id="onboarding-title">Welcome to MythoVerse</h1>
+          <p class="muted">Let’s set up your student profile. You can leave the optional questions blank.</p>
+          <div class="onboarding-progress-wrap">
+            <label for="onboarding-progress" id="onboarding-progress-text">Welcome</label>
+            <progress id="onboarding-progress" max="100" value="0">0%</progress>
+          </div>
+        </div>
+
+        <form id="onboarding-form" class="onboarding-card card" novalidate>
+          <section data-onboarding-step aria-labelledby="welcome-step-title">
+            <p class="eyebrow">A world of stories and ideas</p>
+            <h2 id="welcome-step-title" tabindex="-1">Your learning journey starts here</h2>
+            <p class="muted">
+              MythoVerse is a place to explore learning inspired by Indian
+              mythology. Tell us a little about yourself and what you enjoy.
+              This information is private to your account.
+            </p>
+            <button class="button button-primary" type="button" data-step-action="start">Let’s begin</button>
+          </section>
+
+          <section data-onboarding-step aria-labelledby="student-step-title" hidden>
+            <p class="eyebrow">Step 1</p>
+            <h2 id="student-step-title" tabindex="-1">About you</h2>
+            <div class="form-field">
+              <label class="form-label" for="onboarding-display-name">Display name</label>
+              <input class="form-control" id="onboarding-display-name" name="displayName" type="text" autocomplete="nickname" minlength="2" maxlength="80" required aria-describedby="onboarding-display-name-error">
+              <p class="form-error" id="onboarding-display-name-error" hidden></p>
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="onboarding-age-group">Age group</label>
+              <select class="form-control" id="onboarding-age-group" name="ageGroup" required aria-describedby="onboarding-age-group-error">
+                <option value="">Choose your age group</option>
+                <option value="6-8">6–8</option>
+                <option value="9-12">9–12</option>
+                <option value="13-15">13–15</option>
+                <option value="16-18">16–18</option>
+                <option value="18+">18+</option>
+              </select>
+              <p class="form-error" id="onboarding-age-group-error" hidden></p>
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="onboarding-date-of-birth">Date of birth <span class="muted">(optional)</span></label>
+              <input class="form-control" id="onboarding-date-of-birth" name="dateOfBirth" type="date" autocomplete="bday" aria-describedby="onboarding-date-of-birth-error">
+              <p class="form-hint">You can skip this. Your age group is enough for setup.</p>
+              <p class="form-error" id="onboarding-date-of-birth-error" hidden></p>
+            </div>
+            <div class="cluster step-actions">
+              <button class="button button-quiet" type="button" data-step-action="back">Back</button>
+              <button class="button button-primary" type="button" data-step-action="next">Continue</button>
+            </div>
+          </section>
+
+          <section data-onboarding-step aria-labelledby="education-step-title" hidden>
+            <p class="eyebrow">Step 2</p>
+            <h2 id="education-step-title" tabindex="-1">School information</h2>
+            <p class="muted">These details are optional. Skip anything you would rather not share.</p>
+            <div class="form-field">
+              <label class="form-label" for="onboarding-school">School name <span class="muted">(optional)</span></label>
+              <input class="form-control" id="onboarding-school" name="schoolName" type="text" autocomplete="organization" maxlength="100" aria-describedby="onboarding-school-error">
+              <p class="form-error" id="onboarding-school-error" hidden></p>
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="onboarding-grade">Class or grade <span class="muted">(optional)</span></label>
+              <input class="form-control" id="onboarding-grade" name="grade" type="text" maxlength="40" aria-describedby="onboarding-grade-error">
+              <p class="form-error" id="onboarding-grade-error" hidden></p>
+            </div>
+            <div class="cluster step-actions">
+              <button class="button button-quiet" type="button" data-step-action="back">Back</button>
+              <button class="button button-primary" type="button" data-step-action="next">Continue</button>
+            </div>
+          </section>
+
+          <section data-onboarding-step aria-labelledby="preferences-step-title" hidden>
+            <p class="eyebrow">Step 3</p>
+            <h2 id="preferences-step-title" tabindex="-1">What do you enjoy?</h2>
+            <div class="form-field">
+              <label class="form-label" for="onboarding-language">Preferred language</label>
+              <select class="form-control" id="onboarding-language" name="preferredLanguage" required aria-describedby="onboarding-language-error">
+                <option value="">Choose a language</option>
+                <option value="English">English</option>
+                <option value="Hindi">Hindi</option>
+                <option value="Sanskrit">Sanskrit</option>
+              </select>
+              <p class="form-error" id="onboarding-language-error" hidden></p>
+            </div>
+            <fieldset class="interest-fieldset">
+              <legend class="form-label">Learning interests <span class="muted">(optional)</span></legend>
+              <p class="form-hint">Choose any that sound interesting.</p>
+              <div class="interest-grid">
+                <label class="interest-option"><input type="checkbox" name="learningInterests" value="stories"> <span>Stories</span></label>
+                <label class="interest-option"><input type="checkbox" name="learningInterests" value="culture"> <span>Culture</span></label>
+                <label class="interest-option"><input type="checkbox" name="learningInterests" value="history"> <span>History</span></label>
+                <label class="interest-option"><input type="checkbox" name="learningInterests" value="puzzles"> <span>Puzzles</span></label>
+                <label class="interest-option"><input type="checkbox" name="learningInterests" value="quizzes"> <span>Quizzes</span></label>
+                <label class="interest-option"><input type="checkbox" name="learningInterests" value="art"> <span>Art and drawing</span></label>
+              </div>
+            </fieldset>
+            <div class="cluster step-actions">
+              <button class="button button-quiet" type="button" data-step-action="back">Back</button>
+              <button class="button button-primary" type="button" data-step-action="next">Review</button>
+            </div>
+          </section>
+
+          <section data-onboarding-step aria-labelledby="review-step-title" hidden>
+            <p class="eyebrow">One last look</p>
+            <h2 id="review-step-title" tabindex="-1">Review your details</h2>
+            <p class="muted">You can go back to change anything before saving.</p>
+            <dl id="onboarding-review" class="review-list">
+              <div><dt>Display name</dt><dd id="review-name"></dd></div>
+              <div><dt>Age group</dt><dd id="review-age-group"></dd></div>
+              <div><dt>Date of birth</dt><dd id="review-date-of-birth"></dd></div>
+              <div><dt>School</dt><dd id="review-school"></dd></div>
+              <div><dt>Class or grade</dt><dd id="review-grade"></dd></div>
+              <div><dt>Preferred language</dt><dd id="review-language"></dd></div>
+              <div><dt>Learning interests</dt><dd id="review-interests"></dd></div>
+            </dl>
+            <div class="cluster step-actions">
+              <button class="button button-quiet" type="button" data-step-action="back">Back</button>
+              <button class="button button-primary" type="submit">Save and finish</button>
+            </div>
+          </section>
+
+          <p id="onboarding-status" class="form-status" role="status" aria-live="polite" hidden></p>
+        </form>
+      </section>
+    </main>
+
+    <div data-component="footer"></div>
+  </body>
+</html>

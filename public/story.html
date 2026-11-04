@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Read a MythoVerse learning story and continue through its chapters and lessons.">
+    <title>Read a Story | MythoVerse</title>
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <script src="/assets/js/auth-client.js" defer></script>
+    <script src="/assets/js/main.js" defer></script>
+    <script src="/assets/js/story.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-component="header"></div>
+    <main class="page-main student-page story-reading-page" id="main-content">
+      <div class="container">
+        <p id="story-page-status" class="form-status story-page-status" role="status" aria-live="polite">Loading story…</p>
+        <div id="story-experience" hidden>
+          <section class="story-overview panel" id="story-overview" aria-labelledby="story-title">
+            <a class="story-back-link" href="/stories.html">← Story Library</a>
+            <p class="eyebrow" data-story-category></p>
+            <h1 id="story-title" data-story-title></h1>
+            <p class="story-short-description" data-story-short></p>
+            <div class="story-overview-meta" data-story-meta></div>
+            <p class="story-full-description" data-story-full></p>
+            <div class="story-background-block">
+              <h2>Mythological background</h2>
+              <p data-story-background></p>
+            </div>
+            <div class="story-objectives-block">
+              <h2>Learning objectives</h2>
+              <ul data-story-objectives></ul>
+            </div>
+          </section>
+
+          <section class="story-reading-layout" aria-label="Story chapters and lesson reader">
+            <aside class="story-outline panel" aria-labelledby="story-outline-title">
+              <div class="story-outline-heading">
+                <div>
+                  <p class="eyebrow">Your path</p>
+                  <h2 id="story-outline-title">Chapters &amp; lessons</h2>
+                </div>
+                <p class="story-progress-label" data-story-progress-label>0 of 0 complete</p>
+              </div>
+              <div class="story-outline-list" data-story-outline></div>
+            </aside>
+
+            <article class="lesson-reader panel" aria-labelledby="lesson-title">
+              <div class="lesson-empty" data-lesson-empty hidden>
+                <span class="dashboard-empty-mark" aria-hidden="true">✦</span>
+                <h2>No readable lessons yet</h2>
+                <p>This published story does not currently contain a lesson to read.</p>
+              </div>
+              <div data-lesson-reader-content hidden>
+                <a class="story-back-link lesson-story-return" href="#story-overview">← Story details</a>
+                <p class="eyebrow" data-lesson-position></p>
+                <h2 id="lesson-title" tabindex="-1" data-lesson-title></h2>
+                <p class="lesson-estimate" data-lesson-estimate></p>
+                <div class="lesson-objectives-block">
+                  <h3>In this lesson</h3>
+                  <ul data-lesson-objectives></ul>
+                </div>
+                <div class="lesson-content prose-content" data-lesson-content></div>
+                <p class="form-status lesson-feedback" data-lesson-feedback role="status" aria-live="polite" hidden></p>
+                <div class="lesson-completion-row">
+                  <button class="button button-primary" type="button" data-complete-lesson>Mark lesson complete</button>
+                  <span class="lesson-completed-indicator" data-completed-indicator hidden>Lesson completed</span>
+                </div>
+                <nav class="lesson-step-navigation" aria-label="Lesson navigation">
+                  <button class="button button-quiet" type="button" data-previous-lesson>Previous lesson</button>
+                  <span data-lesson-step></span>
+                  <button class="button button-secondary" type="button" data-next-lesson>Next lesson</button>
+                </nav>
+              </div>
+            </article>
+          </section>
+        </div>
+      </div>
+    </main>
+    <div data-component="footer"></div>
+  </body>
+</html>

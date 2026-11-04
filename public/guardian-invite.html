@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Verify Guardian Invitation | MythoVerse</title>
+    <link rel="stylesheet" href="/assets/css/global.css">
+    <script src="/assets/js/auth-client.js" defer></script>
+    <script src="/assets/js/guardian-invite.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div data-component="header"></div>
+    <main id="main-content" class="page-main">
+      <section class="container form-shell">
+        <p class="eyebrow">Family access</p>
+        <h1>Verify guardian invitation</h1>
+        <p class="form-status" data-guardian-invite-status role="status" aria-live="polite">Checking your invitation…</p>
+        <form class="form-card card" data-guardian-new-form hidden>
+          <p>Create a guardian account for the email address that received this link. The student must approve access after verification.</p>
+          <label class="form-label" for="guardian-display-name">Your name</label>
+          <input class="form-control" id="guardian-display-name" name="displayName" required minlength="2" maxlength="80" autocomplete="name">
+          <label class="form-label" for="guardian-password">Create password</label>
+          <input class="form-control" id="guardian-password" name="password" type="password" required minlength="12" maxlength="72" autocomplete="new-password">
+          <button class="button button-primary" type="submit" data-create-guardian>Verify email and create account</button>
+        </form>
+        <button class="button button-primary" type="button" data-existing-guardian hidden>Verify invitation with this account</button>
+        <a class="button button-secondary" data-guardian-login href="/login.html" hidden>Sign in to your guardian account</a>
+      </section>
+    </main>
+    <div data-component="footer"></div>
+  </body>
+</html>
